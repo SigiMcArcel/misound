@@ -24,9 +24,9 @@ clean:
 	
 
 install: $(LIBRARYOUT)
-        mkdir -p $(DESTDIR)/$(LIBDIR)
-		mkdir -p $(DESTDIR)/$(INCLUDEDIR)
-        cp cWave.h $(DESTDIR)/$(INCLUDEDIR)
-		cp cAlsa.h $(DESTDIR)/$(INCLUDEDIR)
-		cp cAudio.h $(DESTDIR)/$(INCLUDEDIR)
-		cp $(LIBRARYOUT) $(DESTDIR)/$(LIBDIR)
+	mkdir -p $(DESTDIR)/$(LIBDIR)
+	mkdir -p $(DESTDIR)/$(INCLUDEDIR)
+	cp cWave.h $(DESTDIR)/$(INCLUDEDIR)
+	cp cAlsa.h $(DESTDIR)/$(INCLUDEDIR)
+	cp cAudio.h $(DESTDIR)/$(INCLUDEDIR)
+	cp $(LIBRARYOUT) $(DESTDIR)/$(LIBDIR)
