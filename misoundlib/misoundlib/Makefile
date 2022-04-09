@@ -4,14 +4,14 @@ DESTDIR=
 LIBDIR=/usr/lib
 INCLUDEDIR=/usr/include
 
-INCLUDES += -I. -I/.
-CXX_FLAGS += -fpic -Wall
-LD_FLAGS += -shared -lsndfile -lpthread -lasound
+INCLUDES = -I. -I/.
+CXX_FLAGS = -fpic -Wall
+LD_FLAGS = -shared -lsndfile -lpthread -lasound
 
 SOURCES=cAlsa.cpp cAudio.cpp cWave.cpp
 OBJECTS=$(SOURCES:.cpp=.o)
 
-LIBRARYOUT=libmisoundlib.so
+LIBRARYOUT=libmisound.so
 
 
 .cpp.o:

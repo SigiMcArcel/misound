@@ -37,7 +37,7 @@
   <PropertyGroup Label="Globals">
     <ProjectGuid>{85cf6a81-c81e-4f5d-aef5-05e74d3a0fec}</ProjectGuid>
     <Keyword>Linux</Keyword>
-    <RootNamespace>misoundlib</RootNamespace>
+    <RootNamespace>misound</RootNamespace>
     <MinimumVisualStudioVersion>15.0</MinimumVisualStudioVersion>
     <ApplicationType>Linux</ApplicationType>
     <ApplicationTypeRevision>1.0</ApplicationTypeRevision>
@@ -105,10 +105,10 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'">
     <Link>
       <LibraryDependencies>sndfile;pthread;asound</LibraryDependencies>
-      <SharedLibrarySearchPath>/home/root/projects/misoundlib/bin/ARM64/Debug;%(SharedLibrarySearchPath)</SharedLibrarySearchPath>
+      <SharedLibrarySearchPath>/home/root/projects/misound/bin/ARM64/Debug;%(SharedLibrarySearchPath)</SharedLibrarySearchPath>
     </Link>
     <RemotePostBuildEvent>
-      <Command>cp /home/root/projects/misoundlib/bin/ARM64/Debug/libmisoundlib.so /usr/lib/libmisoundlib.so</Command>
+      <Command>cp /home/root/projects/misound/bin/ARM64/Debug/libmisoundlib.so /usr/lib/libmisound.so</Command>
     </RemotePostBuildEvent>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
