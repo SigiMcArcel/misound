@@ -3,9 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.1.32228.430
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "misoundlib", "misoundlib\misoundlib.vcxproj", "{85CF6A81-C81E-4F5D-AEF5-05E74D3A0FEC}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "misound", "misound\misound.vcxproj", "{85CF6A81-C81E-4F5D-AEF5-05E74D3A0FEC}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "misoundlibTest", "..\misoundlibTest\misoundlibTest.vcxproj", "{D8550268-6703-443D-87D7-41C37502BA45}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "misoundTest", "..\misoundTest\misoundTest.vcxproj", "{D8550268-6703-443D-87D7-41C37502BA45}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
