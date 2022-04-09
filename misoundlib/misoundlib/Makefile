@@ -1,6 +1,11 @@
 CXX = g++
 RM = rm
 
+DESTDIR=
+LIBDIR=/usr/lib
+INCLUDEDIR=/usr/include
+
+
 CXX_FLAGS = -fpic -Wall
 LD_FLAGS = -shared -lsndfile -lpthread -lasound
 
@@ -18,3 +23,9 @@ clean:
 	$(RM) $(LIBRARYOUT) *.o
 	
 
+install: $(EXECUTABLE)
+        mkdir -p $(DESTDIR)/$(LIBDIR)
+		mkdir -p $(DESTDIR)/$(INCLUDEDIR)
+        cp cWave.h $(DESTDIR)/$(INCLUDEDIR)
+		cp cAlsa.h $(DESTDIR)/$(INCLUDEDIR)
+		cp cAudio.h $(DESTDIR)/$(INCLUDEDIR)
