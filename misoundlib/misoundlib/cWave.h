@@ -1,7 +1,7 @@
 #pragma once
 #include <fstream>
 #include <string>
-#include <sndfile/sndfile.h>
+#include <sndfile.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdint.h>
