@@ -1,5 +1,5 @@
 CXX = g++
-RM = rm
+RM = rm -f
 
 DESTDIR=
 LIBDIR=/usr/lib
