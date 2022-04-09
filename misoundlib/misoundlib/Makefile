@@ -16,7 +16,7 @@ LIBRARYOUT=libmisoundlib.so
 
 
 .cpp.o:
-	$(CXX) $(CXX_FLAGS) -c $<
+	$(CXX) $(CXX_FLAGS) $(INCLUDES) -c $<
 $(LIBRARYOUT):$(OBJECTS)
 	$(CXX) $(LD_FLAGS) $(OBJECTS) -o $(LIBRARYOUT)
 clean:
