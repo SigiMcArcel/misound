@@ -37,7 +37,7 @@
   <PropertyGroup Label="Globals">
     <ProjectGuid>{d8550268-6703-443d-87d7-41c37502ba45}</ProjectGuid>
     <Keyword>Linux</Keyword>
-    <RootNamespace>misoundlibTest</RootNamespace>
+    <RootNamespace>misoundTest</RootNamespace>
     <MinimumVisualStudioVersion>15.0</MinimumVisualStudioVersion>
     <ApplicationType>Linux</ApplicationType>
     <ApplicationTypeRevision>1.0</ApplicationTypeRevision>
