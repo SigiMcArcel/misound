@@ -5,7 +5,7 @@ DESTDIR=
 LIBDIR=/usr/lib
 INCLUDEDIR=/usr/include
 
-
+INCLUDES = -I. -I/. -I$(INCLUDEDIR)
 CXX_FLAGS = -fpic -Wall
 LD_FLAGS = -shared -lsndfile -lpthread -lasound
 
