@@ -108,8 +108,11 @@
       <SharedLibrarySearchPath>/home/root/projects/misound/bin/ARM64/Debug;%(SharedLibrarySearchPath)</SharedLibrarySearchPath>
     </Link>
     <RemotePostBuildEvent>
-      <Command>cp /home/root/projects/misound/bin/ARM64/Debug/libmisoundlib.so /usr/lib/libmisound.so</Command>
+      <Command>cp /home/root/projects/misound/bin/ARM64/Debug/libmisound.so /usr/lib/libmisound.so</Command>
     </RemotePostBuildEvent>
+    <ClCompile>
+      <AdditionalIncludeDirectories>./;.;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets" />

@@ -207,7 +207,7 @@ public:
 			return 0;
 		}
 		cAlsaStream* stream = (cAlsaStream*)p;
-		int pcm = 0;
+		snd_pcm_sframes_t pcm = 0;
 		unsigned long position = 0, nextPosition = 0;
 		unsigned long framesToWrite = stream->_framesPerBuffer;
 		
@@ -224,7 +224,9 @@ public:
 			{
 				framesToWrite = (stream->_waveDataSize - position) / (stream->_channels * 2);
 			}
-			pcm = snd_pcm_writei(stream->_alsaHandle, &stream->_waveData[position], framesToWrite);
+			pcm = snd_pcm_writei(stream->_alsaHandle
+				, &stream->_waveData[position]
+				, 	static_cast<snd_pcm_uframes_t>(framesToWrite));
 			if (pcm == -EPIPE) {
 				if (snd_pcm_prepare(stream->_alsaHandle)<0)
 				{

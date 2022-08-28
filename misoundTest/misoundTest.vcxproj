@@ -85,7 +85,7 @@
       <AdditionalIncludeDirectories>./misoundlib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
-      <LibraryDependencies>misoundlib</LibraryDependencies>
+      <LibraryDependencies>misound</LibraryDependencies>
       <SharedLibrarySearchPath>%(Link.SharedLibrarySearchPath)</SharedLibrarySearchPath>
     </Link>
   </ItemDefinitionGroup>
