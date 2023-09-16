@@ -108,7 +108,7 @@
       <SharedLibrarySearchPath>/home/root/projects/misound/bin/ARM64/Debug;%(SharedLibrarySearchPath)</SharedLibrarySearchPath>
     </Link>
     <RemotePostBuildEvent>
-      <Command>cp /home/root/projects/misound/bin/ARM64/Debug/libmisound.so /usr/lib/libmisound.so</Command>
+      <Command>cp /home/root/projects/misound/bin/ARM64/Debug/libmisound.so /usr/lib/libmisound.so &amp;&amp; cp /home/root/projects/misound/cAudio.h  /usr/include/ &amp;&amp; cp /home/root/projects/misound/cAlsa.h  /usr/include/ &amp;&amp; cp /home/root/projects/misound/cWave.h  /usr/include/</Command>
     </RemotePostBuildEvent>
     <ClCompile>
       <AdditionalIncludeDirectories>./;.;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>

@@ -2,6 +2,9 @@
 #include <alsa/asoundlib.h>
 #include <sched.h>
 #include <pthread.h>
+#include <string>
+#include <vector>
+#include <mutex>
 
 class cAlsaStream
 {
@@ -17,6 +20,7 @@ class cAlsaStream
 	bool _loop;
 	bool _ready;
 	bool _play;
+
 
 	
 	bool open(unsigned int rate, unsigned int channels)
@@ -422,4 +426,160 @@ public:
 		//printf("vol = %d,max = %d vol = %d\r\n", volume, max, volume * max / 100);
 		return NULL;
 	}
+};
+
+class cAlsaMidi
+{
+	typedef char* MidiDataRaw_p;
+	typedef snd_rawmidi_t MidiHandle_t;
+
+	typedef struct midiMessage_t
+	{
+		char MessageRaw[20];
+		size_t Len;
+	} MidiMessage;
+
+
+
+private:
+	std::string _Device;
+	MidiHandle_t* _MidiHandle;
+	int _MidiInputThread_id;
+	pthread_t _MidiInputThread;
+	int _MidiOutputThread_id;
+	pthread_t _MidiOutputThread;
+	bool _Stop;
+	std::vector<midiMessage_t> _MidiInputBuffer;
+	std::vector<midiMessage_t> _MidiOutputBuffer;
+	
+
+	void  startThread()
+	{
+		_Stop = false;
+		_MidiInputThread_id = pthread_create(&_MidiInputThread, NULL, cAlsaMidi::MidiInputProc, this);
+		_MidiOutputThread_id = pthread_create(&_MidiOutputThread, NULL, cAlsaMidi::MidiOutputProc, this);
+		pthread_setname_np(_MidiInputThread, "midiinproc");
+		pthread_setname_np(_MidiOutputThread, "midioutproc");
+	}
+
+	void  stopThread()
+	{
+		_Stop = true;
+		if (_MidiInputThread != 0)
+		{
+			pthread_join(_MidiInputThread, NULL);
+		}
+		if (_MidiOutputThread != 0)
+		{
+			pthread_join(_MidiOutputThread, NULL);
+		}
+
+	}
+
+public:
+	cAlsaMidi(const std::string device)
+		:_Device(device)
+		, _MidiHandle(nullptr)
+	{
+
+	}
+
+	int putMessage(const MidiMessage& message)
+	{
+		_MidiOutputBuffer.push_back(message);
+		return static_cast<int>(_MidiOutputBuffer.size());
+	}
+
+	int getMessage(MidiMessage& message)
+	{
+		if (_MidiInputBuffer.empty())
+		{
+			return -1;
+		}
+
+		message = _MidiInputBuffer.back();
+		_MidiInputBuffer.pop_back();
+		return static_cast<int>(_MidiInputBuffer.size());
+	}
+
+	bool Open()
+	{
+		int status;
+		int mode = SND_RAWMIDI_SYNC;
+		if ((status = snd_rawmidi_open(NULL, &_MidiHandle, _Device.c_str(), mode)) < 0) {
+			printf("Problem opening MIDI output: %s", snd_strerror(status));
+			return  false;
+		}
+		return true;
+	}
+
+	void Close()
+	{
+		snd_rawmidi_close(_MidiHandle);
+	}
+
+	bool Read(midiMessage_t* data)
+	{
+		ssize_t status;
+		if ((status = snd_rawmidi_read(_MidiHandle, data->MessageRaw, data->Len)) < 0) {
+			printf("Problem writing to MIDI output: %s", snd_strerror(static_cast<int>(status)));
+			return false;
+		}
+		return true;
+	}
+
+	bool Write(midiMessage_t* data)
+	{
+		ssize_t status;
+		if ((status = snd_rawmidi_write(_MidiHandle, data, 3)) < 0) {
+			printf("Problem writing to MIDI output: %s", snd_strerror(static_cast<int>(status)));
+			return false;
+		}
+		return true;
+	}
+
+
+	static void* MidiInputProc(void* p)
+	{
+		std::mutex messageMutex;
+		midiMessage_t data;
+
+		if (p == NULL)
+		{
+			return NULL;
+		}
+		cAlsaMidi* alsaMidi = (cAlsaMidi*)p;
+		while (!alsaMidi->_Stop)
+		{
+			std::lock_guard<std::mutex> guard(messageMutex);
+			if(alsaMidi->Read(&data))
+			{
+				alsaMidi->_MidiInputBuffer.push_back(data);
+			}
+		}
+	}
+
+	static void* MidiOutputProc(void* p)
+	{
+		std::mutex messageMutex;
+		midiMessage_t data;
+
+		if (p == NULL)
+		{
+			return NULL;
+		}
+		cAlsaMidi* alsaMidi = (cAlsaMidi*)p;
+		while (!alsaMidi->_Stop)
+		{
+			std::lock_guard<std::mutex> guard(messageMutex);
+			while (!alsaMidi->_MidiOutputBuffer.empty())
+			{
+				data = alsaMidi->_MidiOutputBuffer.back();
+				alsaMidi->Write(&data);
+				alsaMidi->_MidiOutputBuffer.pop_back();
+			}
+		}
+
+	}
+
 };
