@@ -1,7 +1,7 @@
-#include "cWave.h"
+#include <mi/misound/Wave.h>
 
 
-cWave::cWave(const string& path,const string& name, bool loop)
+misound::Wave::Wave(const string& path,const string& name, bool loop)
 	:_waveFile(NULL)
 	,_error(false)
 	,_waveData(NULL)
@@ -36,10 +36,10 @@ cWave::cWave(const string& path,const string& name, bool loop)
 	sf_read_raw(file, _waveData, _waveSize);
 	sf_close(file);
 	
-	_stream = new cAlsaStream((unsigned int)_info.samplerate,_info.channels);
+	_stream = new AlsaStream((unsigned int)_info.samplerate,_info.channels);
 }
 
-cWave::cWave( const string& name, bool loop)
+misound::Wave::Wave( const string& name, bool loop)
 	:_waveFile(NULL)
 	, _error(false)
 	, _waveData(NULL)
@@ -55,7 +55,7 @@ cWave::cWave( const string& name, bool loop)
 
 }
 
-cWave::cWave(const cWave& other)
+misound::Wave:: Wave(const Wave& other)
 	:_waveFile(other._waveFile)
 	, _error(other._error)
 	, _waveData(other._waveData)
@@ -70,7 +70,7 @@ cWave::cWave(const cWave& other)
 	
 };
 
-cWave::cWave() 
+misound::Wave::Wave()
 	:_waveFile(NULL)
 	, _error(false)
 	, _waveData(NULL)
@@ -85,45 +85,43 @@ cWave::cWave()
 	
 };
 
-unsigned long cWave::samplePosition() const
+unsigned long misound::Wave::samplePosition() const
 {
 	return _samplePosition;
 }
-unsigned long cWave::size() const
+unsigned long misound::Wave::size() const
 {
 	return _waveSize;
 }
-int cWave::error()
+int misound::Wave::error()
 {
 	return _error;
 }
 
-const SF_INFO& cWave::info()
+const SF_INFO& misound::Wave::info()
 {
 	return _info;
 }
 
-cWave::~cWave()
+misound::Wave::~Wave()
 {
 	if (_waveData != NULL)
 	{
-
 		free(_waveData);
 	}
 	_waveData = NULL;
 	delete _stream;
 }
 
-void cWave::play() 
+void misound::Wave::play()
 {
 	if(!_stream->playing())
 	{
 		_stream->playWave(_waveData, static_cast<unsigned long>(_info.frames), _loop);
-	}
-	
+	}	
 }
 
-void cWave::stop()
+void misound::Wave::stop()
 {
 	_stream->stopWave();
 }

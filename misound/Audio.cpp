@@ -1,7 +1,7 @@
-#include "cAudio.h"
+#include <mi/misound/Audio.h>
 #include <inttypes.h>
 #include <pthread.h>
-#include "cAlsa.h"
+#include <mi/misound/Alsa.h>
 
 static pthread_mutex_t  SHAKE_BufferMutex = PTHREAD_MUTEX_INITIALIZER;
 void shakeLock() { pthread_mutex_lock(&SHAKE_BufferMutex); }
@@ -9,20 +9,20 @@ void shakeUnlock() { pthread_mutex_unlock(&SHAKE_BufferMutex); }
 
 using namespace std;
 
-cAudio::cAudio()
+misound::Audio::Audio()
 	:_waves()
 	,_volume(20)
 {
 }
 
 
-cAudio::~cAudio()
+misound::Audio::~Audio()
 {
 }
 
 
 
-bool cAudio::playWave(const string& name, bool restart )
+bool misound::Audio::playWave(const string& name, bool restart )
 {
 	
 	if (_waves.count(name) == 0)
@@ -37,7 +37,7 @@ bool cAudio::playWave(const string& name, bool restart )
 	return true;
 }
 
-bool cAudio::playWave(const string& name, bool restart,bool loop)
+bool misound::Audio::playWave(const string& name, bool restart,bool loop)
 {
 	
 	if (_waves.count(name) == 0)
@@ -53,10 +53,10 @@ bool cAudio::playWave(const string& name, bool restart,bool loop)
 	return true;
 }
 
-bool cAudio::playWave(const int num, bool restart )
+bool misound::Audio::playWave(const int num, bool restart )
 {
 	int index = 0;
-	map<string, cWave>::iterator it;
+	map<string, Wave>::iterator it;
 	if ((_waves.size() == 0) || (_waves.size() <= static_cast<size_t>(num)))
 	{
 		return false;
@@ -75,7 +75,7 @@ bool cAudio::playWave(const int num, bool restart )
 	return true;
 }
 
-bool cAudio::isPlaying(const string& name)
+bool misound::Audio::isPlaying(const string& name)
 {
 	if (_waves.count(name) == 0)
 	{
@@ -84,7 +84,7 @@ bool cAudio::isPlaying(const string& name)
 	return _waves[name].isPlaying();
 }
 
-bool cAudio::stopWave(const string& name)
+bool misound::Audio::stopWave(const string& name)
 {
 	if (_waves.count(name) == 0)
 	{
@@ -94,9 +94,9 @@ bool cAudio::stopWave(const string& name)
 	return true;
 }
 
-bool cAudio::stopAllWave()
+bool misound::Audio::stopAllWave()
 {
-	map<string, cWave>::iterator it;
+	map<string, Wave>::iterator it;
 	for (it = _waves.begin(); it != _waves.end(); it++)
 	{	
 		it->second.stop();
@@ -104,7 +104,7 @@ bool cAudio::stopAllWave()
 	return true;
 }
 
-bool cAudio::addWave(const cWave& wave)
+bool misound::Audio::addWave(const Wave& wave)
 {
 	_waves[wave.getName()] = wave;
 	printf( "cAudio::addWave : add Wave %s\n", wave.getName().c_str());
@@ -112,9 +112,9 @@ bool cAudio::addWave(const cWave& wave)
 	return true;
 }
  
-bool cAudio::addWave(const string & path, const string & name,bool loop = false)
+bool misound::Audio::addWave(const string & path, const string & name,bool loop = false)
 {
-	cWave* w = new cWave(path, name, loop);
+	Wave* w = new Wave(path, name, loop);
 	if (w->error() > 0)
 	{
 		return false;
@@ -123,7 +123,7 @@ bool cAudio::addWave(const string & path, const string & name,bool loop = false)
 	return true;
 }
 
-bool cAudio::addWavesFromFolder(const string & folder,bool loop)
+bool misound::Audio::addWavesFromFolder(const string & folder,bool loop)
 {
 	
 	vector<string> waves = vector<string>();
@@ -139,19 +139,19 @@ bool cAudio::addWavesFromFolder(const string & folder,bool loop)
 		path.append(name);
 		replace(name, ".wav", "");
 		
-		cWave* w = new cWave(path, name, loop);
+		Wave* w = new Wave(path, name, loop);
 		addWave(*w);
 	}
 	return true;
 }
 
-bool cAudio::setVolume(int volume)
+bool misound::Audio::setVolume(int volume)
 {
 	return _volume.setVolume(volume);
 }
 
 
-int cAudio::getWaves(string dir, vector<string> &waves)
+int misound::Audio::getWaves(string dir, vector<string> &waves)
 {
 	DIR *dp;
 	struct dirent *dirp;
@@ -173,7 +173,7 @@ int cAudio::getWaves(string dir, vector<string> &waves)
 	return 0;
 }
 
-std::string& cAudio::replace(std::string& s, const std::string& from, const std::string& to)
+std::string& misound::Audio::replace(std::string& s, const std::string& from, const std::string& to)
 {
 	if (!from.empty())
 		for (size_t pos = 0; (pos = s.find(from, pos)) != std::string::npos; pos += to.size())

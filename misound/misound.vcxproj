@@ -83,14 +83,14 @@
     <TargetExt>.so</TargetExt>
   </PropertyGroup>
   <ItemGroup>
-    <ClCompile Include="cAlsa.cpp" />
-    <ClCompile Include="cAudio.cpp" />
-    <ClCompile Include="cWave.cpp" />
+    <ClCompile Include="Alsa.cpp" />
+    <ClCompile Include="Audio.cpp" />
+    <ClCompile Include="Wave.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="cAlsa.h" />
-    <ClInclude Include="cAudio.h" />
-    <ClInclude Include="cWave.h" />
+    <ClInclude Include="Alsa.h" />
+    <ClInclude Include="Audio.h" />
+    <ClInclude Include="Wave.h" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="Makefile">
@@ -108,11 +108,14 @@
       <SharedLibrarySearchPath>/home/root/projects/misound/bin/ARM64/Debug;%(SharedLibrarySearchPath)</SharedLibrarySearchPath>
     </Link>
     <RemotePostBuildEvent>
-      <Command>cp /home/root/projects/misound/bin/ARM64/Debug/libmisound.so /usr/lib/libmisound.so &amp;&amp; cp /home/root/projects/misound/cAudio.h  /usr/include/ &amp;&amp; cp /home/root/projects/misound/cAlsa.h  /usr/include/ &amp;&amp; cp /home/root/projects/misound/cWave.h  /usr/include/</Command>
+      <Command>cp $(RemoteDebuggerCommand) /usr/lib</Command>
     </RemotePostBuildEvent>
     <ClCompile>
       <AdditionalIncludeDirectories>./;.;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
+    <RemotePreBuildEvent>
+      <Command> cp *.h /usr/include/mi/misound/</Command>
+    </RemotePreBuildEvent>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets" />
