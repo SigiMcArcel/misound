@@ -31,6 +31,7 @@ namespace misound
 		unsigned long   _waveSize;
 		bool _playing;
 		string _name;
+		string _path;
 		misound::AlsaStream* _stream;
 
 	public:

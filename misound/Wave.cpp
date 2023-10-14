@@ -11,6 +11,7 @@ misound::Wave::Wave(const string& path,const string& name, bool loop)
 	,_waveSize(0)
 	,_playing(false)
 	,_name(name)
+	,_path(path)
 	,_stream(NULL)
 {
 	
@@ -19,7 +20,7 @@ misound::Wave::Wave(const string& path,const string& name, bool loop)
 	if (sf_error(file) != SF_ERR_NO_ERROR)
 	{
 		printf( "%s\n", sf_strerror(_waveFile));
-		printf( "File: %s\n", path.c_str());
+		printf( "File: %s\n", _path.c_str());
 		_error = 2;
 		return;
 	}
@@ -37,22 +38,6 @@ misound::Wave::Wave(const string& path,const string& name, bool loop)
 	sf_close(file);
 	
 	_stream = new AlsaStream((unsigned int)_info.samplerate,_info.channels);
-}
-
-misound::Wave::Wave( const string& name, bool loop)
-	:_waveFile(NULL)
-	, _error(false)
-	, _waveData(NULL)
-	, _info()
-	, _loop(loop)
-	, _samplePosition(0)
-	, _waveSize(0)
-	, _playing(false)
-	, _name(name)
-	, _stream(NULL)
-{
-
-
 }
 
 misound::Wave:: Wave(const Wave& other)

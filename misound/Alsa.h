@@ -5,8 +5,11 @@
 #include <string>
 #include <vector>
 #include <mutex>
+#include <math.h>
+
 namespace misound
 {
+	#define MAX_LINEAR_DB_SCALE 24
 	class AlsaStream
 	{
 		snd_pcm_t* _alsaHandle;
@@ -22,6 +25,9 @@ namespace misound
 		bool _ready;
 		bool _play;
 
+	
+
+		
 
 
 		bool open(unsigned int rate, unsigned int channels)
@@ -275,6 +281,74 @@ namespace misound
 		bool _stop;
 		int _error = 0;
 
+		/* from alsa-utils/alsamixer/volume_mapping.c
+*
+* The mapping is designed so that the position in the interval is proportional
+* to the volume as a human ear would perceive it (i.e., the position is the
+* cubic root of the linear sample multiplication factor).  For controls with
+* a small range (24 dB or less), the mapping is linear in the dB values so
+* that each step has the same size visually.  Only for controls without dB
+* information, a linear mapping of the hardware volume register values is used
+* (this is the same algorithm as used in the old alsamixer).
+*
+* When setting the volume, 'dir' is the rounding direction:
+* -1/0/1 = down/nearest/up.
+*/
+		static bool use_linear_dB_scale(long dBmin, long dBmax)
+		{
+			return dBmax - dBmin <= MAX_LINEAR_DB_SCALE * 100;
+		}
+
+		static long lrint_dir(double x, int dir)
+		{
+			if (dir > 0)
+				return lrint(ceil(x));
+			else if (dir < 0)
+				return lrint(floor(x));
+			else
+				return lrint(x);
+		}
+
+		// from alsamixer/volume-mapping.c, sets volume in line with human perception
+		static int volume_normalized_set(snd_mixer_elem_t* elem, double volume, int dir)
+		{
+			long min, max, value;
+			double min_norm;
+			int err;
+
+			err = snd_mixer_selem_get_playback_dB_range(elem, &min, &max);
+			if (err < 0 || min >= max)
+			{
+				err = snd_mixer_selem_get_playback_volume_range(elem, &min, &max);
+				if (err < 0)
+					return err;
+
+				value = lrint_dir(volume * (max - min), dir) + min;
+				return snd_mixer_selem_set_playback_volume_all(elem, value);
+			}
+
+			// Corner case from mpd - log10() expects non-zero
+			if (volume <= 0)
+				return snd_mixer_selem_set_playback_dB_all(elem, min, dir);
+			else if (volume >= 1)
+				return snd_mixer_selem_set_playback_dB_all(elem, max, dir);
+
+			if (use_linear_dB_scale(min, max))
+			{
+				value = lrint_dir(volume * (max - min), dir) + min;
+				return snd_mixer_selem_set_playback_dB_all(elem, value, dir);
+			}
+
+			if (min != SND_CTL_TLV_DB_GAIN_MUTE)
+			{
+				min_norm = pow(10, (min - max) / 6000.0);
+				volume = volume * (1 - min_norm) + min_norm;
+			}
+
+			value = lrint_dir(6000.0 * log10(volume), dir) + max;
+			return snd_mixer_selem_set_playback_dB_all(elem, value, dir);
+		}
+
 		void  startThread()
 		{
 			_stop = false;
@@ -297,7 +371,7 @@ namespace misound
 			int result = 0;
 
 			snd_mixer_selem_id_t* sid = NULL;
-			const char* card = "hw:0";
+			const char* card = "hw:2";
 			const char* selem_name = "Digital";
 
 			if (_mixerHandle == NULL)
@@ -334,6 +408,7 @@ namespace misound
 			{
 				return false;
 			}
+			printf("Alsa _volumeValueMax %ld _volumeValueMin %ld\n", _volumeValueMax, _volumeValueMin);
 			return true;
 		}
 
@@ -414,7 +489,10 @@ namespace misound
 			{
 				if (volume->_volumeValue != volume->_lastVolumeValue)
 				{
-					result = snd_mixer_selem_set_playback_volume_all(volume->_AlsaElem, volume->_volumeValue * volume->_volumeValueMax / 100);
+					float v = (float)volume->_volumeValue * (float)volume->_volumeValueMax / (float)100;
+					//result = snd_mixer_selem_set_playback_volume_all(volume->_AlsaElem,(long)v);
+					//result = snd_mixer_selem_set_playback_dB_all(volume->_AlsaElem, (long)v,0);
+					volume_normalized_set(volume->_AlsaElem, volume->_volumeValue >= 0 && volume->_volumeValue <= 100 ? volume->_volumeValue / 100.0 : 0.75, 0);
 					if (result < 0)
 					{
 						volume->_error = result;
