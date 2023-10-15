@@ -1,4 +1,4 @@
-#include <mi/misound/Wave.h>
+#include "Wave.h"
 
 
 misound::Wave::Wave(const string& path,const string& name, bool loop)

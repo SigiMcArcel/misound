@@ -1,7 +1,7 @@
-#include <mi/misound/Audio.h>
+#include "Audio.h"
 #include <inttypes.h>
 #include <pthread.h>
-#include <mi/misound/Alsa.h>
+#include "Alsa.h"
 
 static pthread_mutex_t  SHAKE_BufferMutex = PTHREAD_MUTEX_INITIALIZER;
 void shakeLock() { pthread_mutex_lock(&SHAKE_BufferMutex); }

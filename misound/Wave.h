@@ -5,7 +5,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdint.h>
-#include <mi/misound/Alsa.h>
+#include "Alsa.h"
 
 using namespace std;
 namespace misound

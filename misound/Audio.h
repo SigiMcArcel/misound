@@ -8,7 +8,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdint.h>
-#include <mi/misound/Wave.h>
+#include "Wave.h"
 #include <dirent.h>
 #include <sys/types.h>
 #include <dirent.h>
