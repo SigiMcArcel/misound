@@ -12,9 +12,10 @@ int main()
     }
 
    _audio->playWave("test", false, true);
+   _audio->setVolume(50);
    while (true)
    {
-       _audio->setVolume(100);
+       
        ::usleep(100000);
    }
 
