@@ -36,12 +36,13 @@ namespace misound
 			unsigned int tmp = 0;
 			snd_pcm_hw_params_t* params;
 
-
+			printf("Alsa stream :open channles = %d rate = %d\n",channels,rate);
 			/* Open the PCM device in playback mode */
+
 			pcm = snd_pcm_open(&_alsaHandle, "plug:dmix", SND_PCM_STREAM_PLAYBACK, 0);
 			if (pcm < 0)
 			{
-				printf("ERROR: Can't open \"%s\" PCM device. %s\n", "plug:dmixer", snd_strerror(pcm));
+				printf("ERROR: Can't open \"%s\" PCM device. %s\n", "plug:dmix", snd_strerror(pcm));
 				return false;
 			}
 
