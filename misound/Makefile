@@ -23,7 +23,7 @@ clean:
 
 install: $(LIBRARYOUT)
 	install -d $(DESTDIR)/${libdir}
-	install -D -m 0644 libmidriver.so $(DESTDIR)/${libdir}/$(LIBRARYOUT)
+	install -D -m 0644 libmisound.so $(DESTDIR)/${libdir}/$(LIBRARYOUT)
 	install -d $(DESTDIR)/${includedir}
 	install -d $(DESTDIR)/${includedir}/mi
 	install -d $(DESTDIR)/${includedir}/mi/misound
