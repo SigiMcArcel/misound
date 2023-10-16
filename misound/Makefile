@@ -1,8 +1,7 @@
-
-
 DESTDIR=
-LIBDIR=/usr/lib
-INCLUDEDIR=/usr/include
+refix=/usr
+includedir=$(prefix)/include
+libdir=$(prefix)/lib
 
 INCLUDES = -I. -I/.
 CXX_FLAGS = -fpic -Wall
@@ -23,9 +22,11 @@ clean:
 	
 
 install: $(LIBRARYOUT)
-	mkdir -p $(DESTDIR)/$(LIBDIR)
-	mkdir -p $(DESTDIR)/$(INCLUDEDIR)
-	cp Wave.h $(DESTDIR)/$(INCLUDEDIR)
-	cp Alsa.h $(DESTDIR)/$(INCLUDEDIR)
-	cp Audio.h $(DESTDIR)/$(INCLUDEDIR)
-	cp $(LIBRARYOUT) $(DESTDIR)/$(LIBDIR)
+	install -d $(DESTDIR)/${libdir}
+	install -D -m 0644 libmidriver.so $(DESTDIR)/${libdir}/$(LIBRARYOUT)
+	install -d $(DESTDIR)/${includedir}
+	install -d $(DESTDIR)/${includedir}/mi
+	install -d $(DESTDIR)/${includedir}/mi/misound
+	install -D -m 0644 Wave.h $(DESTDIR)/${includedir}/mi/midriver/Wave.h
+	install -D -m 0644 Alsa.h $(DESTDIR)/${includedir}/mi/midriver/Alsa.h
+	install -D -m 0644 Audio.h $(DESTDIR)/${includedir}/mi/midriver/Audio.h
