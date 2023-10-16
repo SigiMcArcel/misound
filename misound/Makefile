@@ -27,6 +27,6 @@ install: $(LIBRARYOUT)
 	install -d $(DESTDIR)/${includedir}
 	install -d $(DESTDIR)/${includedir}/mi
 	install -d $(DESTDIR)/${includedir}/mi/misound
-	install -D -m 0644 Wave.h $(DESTDIR)/${includedir}/mi/midriver/Wave.h
-	install -D -m 0644 Alsa.h $(DESTDIR)/${includedir}/mi/midriver/Alsa.h
-	install -D -m 0644 Audio.h $(DESTDIR)/${includedir}/mi/midriver/Audio.h
+	install -D -m 0644 Wave.h $(DESTDIR)/${includedir}/mi/misound/Wave.h
+	install -D -m 0644 Alsa.h $(DESTDIR)/${includedir}/mi/misound/Alsa.h
+	install -D -m 0644 Audio.h $(DESTDIR)/${includedir}/mi/misound/Audio.h
