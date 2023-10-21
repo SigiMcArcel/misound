@@ -4,7 +4,7 @@ includedir=$(prefix)/include
 libdir=$(prefix)/lib
 
 INCLUDES = -I. -I/.
-CXX_FLAGS = -fpic -Wall
+CXXFLAGS = -fpic -Wall -Wl,--no-undefined
 LD_FLAGS = -shared -lsndfile -lpthread -lasound
 
 SOURCES=Alsa.cpp Audio.cpp Wave.cpp
@@ -12,15 +12,13 @@ OBJECTS=$(SOURCES:.cpp=.o)
 
 LIBRARYOUT=libmisound.so
 
-
 .cpp.o:
-	$(CXX) $(CXX_FLAGS) $(INCLUDES) -c $<
+	$(CXX) ${CXXFLAGS} $(INCLUDES) -c $<
 $(LIBRARYOUT):$(OBJECTS)
 	$(CXX) $(LD_FLAGS) $(OBJECTS) -o $(LIBRARYOUT)
 clean:
 	$(RM) $(LIBRARYOUT) *.o
 	
-
 install: $(LIBRARYOUT)
 	install -d $(DESTDIR)/${libdir}
 	install -D -m 0644 libmisound.so $(DESTDIR)/${libdir}/$(LIBRARYOUT)
