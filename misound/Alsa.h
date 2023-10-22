@@ -25,11 +25,6 @@ namespace misound
 		bool _ready;
 		bool _play;
 
-	
-
-		
-
-
 		bool open(unsigned int rate, unsigned int channels)
 		{
 			int pcm = 0;
@@ -324,7 +319,7 @@ namespace misound
 				if (err < 0)
 					return err;
 
-				value = lrint_dir(volume * (max - min), dir) + min;
+				value = lrint_dir(volume * static_cast<double>(max - min), dir) + min;
 				return snd_mixer_selem_set_playback_volume_all(elem, value);
 			}
 
@@ -336,13 +331,13 @@ namespace misound
 
 			if (use_linear_dB_scale(min, max))
 			{
-				value = lrint_dir(volume * (max - min), dir) + min;
+				value = lrint_dir(volume * static_cast<double>(max - min), dir) + min;
 				return snd_mixer_selem_set_playback_dB_all(elem, value, dir);
 			}
 
 			if (min != SND_CTL_TLV_DB_GAIN_MUTE)
 			{
-				min_norm = pow(10, (min - max) / 6000.0);
+				min_norm = pow(10, static_cast<double>(min - max) / 6000.0);
 				volume = volume * (1 - min_norm) + min_norm;
 			}
 
@@ -372,7 +367,7 @@ namespace misound
 			int result = 0;
 
 			snd_mixer_selem_id_t* sid = NULL;
-			const char* card = "hw:2";
+			const char* card = "hw:0";
 			const char* selem_name = "Digital";
 
 			if (_mixerHandle == NULL)
@@ -490,9 +485,6 @@ namespace misound
 			{
 				if (volume->_volumeValue != volume->_lastVolumeValue)
 				{
-					float v = (float)volume->_volumeValue * (float)volume->_volumeValueMax / (float)100;
-					//result = snd_mixer_selem_set_playback_volume_all(volume->_AlsaElem,(long)v);
-					//result = snd_mixer_selem_set_playback_dB_all(volume->_AlsaElem, (long)v,0);
 					volume_normalized_set(volume->_AlsaElem, volume->_volumeValue >= 0 && volume->_volumeValue <= 100 ? volume->_volumeValue / 100.0 : 0.75, 0);
 					if (result < 0)
 					{
@@ -503,7 +495,6 @@ namespace misound
 				usleep(volume->_intervall * 1000);
 			}
 
-			//printf("vol = %d,max = %d vol = %d\r\n", volume, max, volume * max / 100);
 			return NULL;
 		}
 	};
