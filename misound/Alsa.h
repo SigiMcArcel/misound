@@ -31,7 +31,7 @@ namespace misound
 			unsigned int tmp = 0;
 			snd_pcm_hw_params_t* params;
 
-			printf("Alsa stream :open channles = %d rate = %d\n",channels,rate);
+			printf("Alsa stream :open channels = %d rate = %d\n",channels,rate);
 			/* Open the PCM device in playback mode */
 
 			pcm = snd_pcm_open(&_alsaHandle, "plug:dmix", SND_PCM_STREAM_PLAYBACK, 0);
@@ -135,8 +135,11 @@ namespace misound
 
 		void  startThread()
 		{
+			struct sched_param params;
 			_playThread_id = pthread_create(&_playThread, NULL, AlsaStream::PlayProc, this);
 			pthread_setname_np(_playThread, "stream");
+			params.__sched_priority = 50;
+			pthread_setschedparam(_playThread, SCHED_FIFO, &params);
 
 		}
 
@@ -267,10 +270,7 @@ namespace misound
 	private:
 		int _volumeThread_id;
 		pthread_t _volumeThread;
-		int _lastVolumeValue;
-		int _volumeValue;
-		long _volumeValueMin;
-		long _volumeValueMax;
+		double _volumeValue;
 		int _intervall;
 		snd_mixer_t* _mixerHandle;
 		snd_mixer_elem_t* _AlsaElem;
@@ -323,11 +323,7 @@ namespace misound
 				return snd_mixer_selem_set_playback_volume_all(elem, value);
 			}
 
-			// Corner case from mpd - log10() expects non-zero
-			if (volume <= 0)
-				return snd_mixer_selem_set_playback_dB_all(elem, min, dir);
-			else if (volume >= 1)
-				return snd_mixer_selem_set_playback_dB_all(elem, max, dir);
+			
 
 			if (use_linear_dB_scale(min, max))
 			{
@@ -399,12 +395,6 @@ namespace misound
 			{
 				return false;
 			}
-
-			if (snd_mixer_selem_get_playback_volume_range(_AlsaElem, &_volumeValueMin, &_volumeValueMax) < 0)
-			{
-				return false;
-			}
-			printf("Alsa _volumeValueMax %ld _volumeValueMin %ld\n", _volumeValueMax, _volumeValueMin);
 			return true;
 		}
 
@@ -440,10 +430,7 @@ namespace misound
 		AlsaVolume(unsigned int intervall)
 			: _volumeThread_id(0)
 			, _volumeThread()
-			, _lastVolumeValue(-1)
 			, _volumeValue(0)
-			, _volumeValueMin(0)
-			, _volumeValueMax(0)
 			, _intervall(intervall)
 			, _mixerHandle(NULL)
 			, _AlsaElem(NULL)
@@ -456,6 +443,7 @@ namespace misound
 			{
 				_error = -1;
 			}
+			volume_normalized_set(_AlsaElem, 0, 0);
 		}
 
 		~AlsaVolume()
@@ -463,7 +451,7 @@ namespace misound
 			closeVolume();
 		}
 
-		bool setVolume(int volume)
+		bool setVolume(double volume)
 		{
 			if (_error < 0)
 			{
@@ -475,7 +463,9 @@ namespace misound
 
 		static void* VolumeProc(void* p)
 		{
-			int result = 0;
+			
+			int last = 0;
+			int current = 0;
 			if (p == NULL)
 			{
 				return NULL;
@@ -483,15 +473,22 @@ namespace misound
 			AlsaVolume* volume = (AlsaVolume*)p;
 			while (!volume->_stop)
 			{
-				if (volume->_volumeValue != volume->_lastVolumeValue)
+				current = static_cast<int>(volume->_volumeValue);
+
+				while (current > last)
 				{
-					volume_normalized_set(volume->_AlsaElem, volume->_volumeValue >= 0 && volume->_volumeValue <= 100 ? volume->_volumeValue / 100.0 : 0.75, 0);
-					if (result < 0)
-					{
-						volume->_error = result;
-					}
+					volume_normalized_set(volume->_AlsaElem, static_cast<double>(last) / 100.0, 0);
+					last++;
+					usleep(volume->_intervall * 1000);
+
 				}
-				volume->_lastVolumeValue = volume->_volumeValue;
+				while (current < last)
+				{
+					volume_normalized_set(volume->_AlsaElem, static_cast<double>(last) / 100.0, 0);
+					usleep(volume->_intervall * 1000);
+					last--;
+				}
+				
 				usleep(volume->_intervall * 1000);
 			}
 
