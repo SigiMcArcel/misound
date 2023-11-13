@@ -24,8 +24,26 @@ misound::Wave::Wave(const string& path,const string& name, bool loop)
 		_error = 2;
 		return;
 	}
-	_waveSize = (unsigned long)_info.frames * _info.channels * 2;
-	_waveData = (unsigned char*)malloc(static_cast<size_t >(_info.frames) * static_cast<size_t >(_info.channels * 2));
+	
+	int test = (_info.format & SF_FORMAT_PCM_16);
+	if ((_info.format & 0x0f) == SF_FORMAT_PCM_16)
+	{
+		_format = misound::SoundFormat::SoundFormat_S16_LE;
+	}
+	else if((_info.format & 0x0f) == SF_FORMAT_PCM_24)
+	{
+		_format = misound::SoundFormat::SoundFormat_S24_LE;
+	}
+	else
+	{
+		printf("Wave.c Format not supported\n");
+		return;
+	}
+	_waveSize = (unsigned long)_info.frames * _info.channels * static_cast<unsigned long>(_format);
+	_waveData = (unsigned char*)malloc(static_cast<size_t>(_waveSize));
+	sf_read_raw(file, _waveData, _waveSize);
+	sf_close(file);
+
 	if (_waveData == NULL)
 	{
 		printf("Memory: %s\n", path.c_str());
@@ -34,10 +52,7 @@ misound::Wave::Wave(const string& path,const string& name, bool loop)
 		return;
 
 	}
-	sf_read_raw(file, _waveData, _waveSize);
-	sf_close(file);
-	
-	_stream = new AlsaStream((unsigned int)_info.samplerate,_info.channels);
+	_stream = new AlsaStream((unsigned int)_info.samplerate,_info.channels,_format);
 }
 
 misound::Wave:: Wave(const Wave& other)

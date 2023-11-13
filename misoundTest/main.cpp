@@ -5,18 +5,12 @@
 int main()
 {
     printf("Hallo aus %s!\n", "misoundlibTest");
-    misound::Audio* _audio = new misound::Audio();
-   if (!_audio->addWave("/home/root/sounds/P1.wav","test",true))
-    {
-        return 1;
-    }
-
-   _audio->playWave("test", false, true);
-   _audio->setVolume(50);
+    misound::Wave _wave("/home/root/sounds/A2.wav", "A2.wav", true);
    while (true)
    {
-       
-       ::usleep(100000);
+       _wave.play();
+       ::sleep(10);
+       _wave.stop();
    }
 
     return 0;

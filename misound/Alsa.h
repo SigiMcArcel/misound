@@ -10,6 +10,12 @@
 namespace misound
 {
 	#define MAX_LINEAR_DB_SCALE 24
+
+	enum class SoundFormat
+	{
+		SoundFormat_S16_LE = 2,
+		SoundFormat_S24_LE = 3
+	};
 	class AlsaStream
 	{
 		snd_pcm_t* _alsaHandle;
@@ -24,12 +30,14 @@ namespace misound
 		bool _loop;
 		bool _ready;
 		bool _play;
+		SoundFormat _soundFormat;
 
 		bool open(unsigned int rate, unsigned int channels)
 		{
 			int pcm = 0;
 			unsigned int tmp = 0;
 			snd_pcm_hw_params_t* params;
+			_snd_pcm_format usedFormat = SND_PCM_FORMAT_UNKNOWN;
 
 			printf("Alsa stream :open channels = %d rate = %d\n",channels,rate);
 			/* Open the PCM device in playback mode */
@@ -58,8 +66,22 @@ namespace misound
 				close();
 				return false;
 			}
+			if (_soundFormat == SoundFormat::SoundFormat_S16_LE)
+			{
+				usedFormat = SND_PCM_FORMAT_S16_LE;
+			}
+			else if (_soundFormat == SoundFormat::SoundFormat_S24_LE)
+			{
+				usedFormat = SND_PCM_FORMAT_S24_3LE;
+			}
+			else
+			{
+				printf("ERROR: SoundFormat not supported\n");
+				close();
+				return false;
+			}
 
-			pcm = snd_pcm_hw_params_set_format(_alsaHandle, params, SND_PCM_FORMAT_S16_LE);
+			pcm = snd_pcm_hw_params_set_format(_alsaHandle, params, usedFormat);
 			if (pcm < 0)
 			{
 				printf("ERROR: Can't set format. %s\n", snd_strerror(pcm));
@@ -152,7 +174,7 @@ namespace misound
 
 
 	public:
-		AlsaStream(unsigned int rate, unsigned int channels)
+		AlsaStream(unsigned int rate, unsigned int channels, SoundFormat format)
 			:_rate(rate)
 			, _channels(channels)
 			, _framesPerBuffer(0)
@@ -161,6 +183,7 @@ namespace misound
 			, _playing(false)
 			, _loop(false)
 			, _play(false)
+			, _soundFormat(format)
 
 		{
 
@@ -181,7 +204,7 @@ namespace misound
 			_loop = loop;
 			_playing = true;
 			_play = true;
-			_waveDataSize = framesCnt * _channels * SND_PCM_FORMAT_S16_LE;
+			_waveDataSize = framesCnt * _channels * static_cast<unsigned long>(_soundFormat);
 			_waveData = pWave;
 
 			if (!open(_rate, _channels))
@@ -197,7 +220,7 @@ namespace misound
 			if (_playing)
 			{
 				_play = false;
-				stopThread();
+				//stopThread();
 
 			}
 
@@ -228,11 +251,11 @@ namespace misound
 
 			do
 			{
-				nextPosition += (stream->_framesPerBuffer * stream->_channels * 2);
+				nextPosition += (stream->_framesPerBuffer * stream->_channels * static_cast<unsigned long>(stream->_soundFormat));
 				//Ist die Anzahl verbliebener Frames im wave kleiner als die Anzahl frames per buffer dann:
 				if (nextPosition >= stream->_waveDataSize)
 				{
-					framesToWrite = (stream->_waveDataSize - position) / (stream->_channels * 2);
+					framesToWrite = (stream->_waveDataSize - position) / (stream->_channels * static_cast<unsigned long>(stream->_soundFormat));
 				}
 				pcm = snd_pcm_writei(stream->_alsaHandle
 					, &stream->_waveData[position]
@@ -244,7 +267,7 @@ namespace misound
 					}
 				}
 
-				position += (stream->_framesPerBuffer * stream->_channels * 2);
+				position += (stream->_framesPerBuffer * stream->_channels * static_cast<unsigned long>(stream->_soundFormat));
 
 
 				if (stream->_loop)
@@ -498,18 +521,42 @@ namespace misound
 
 	class AlsaMidi
 	{
-		typedef char* MidiDataRaw_p;
-		typedef snd_rawmidi_t MidiHandle_t;
+		
+	public:
+		enum class MidiCommand_e
+		{
+			NoteOff = 0x08,
+			NoteOn = 0x09,
+			PolyPressure = 0x0A,
+			Controller = 0x0B,
+			ProgramChange = 0x0C,
+			ChannelPressure = 0x0D,
+			PitchWheel = 0x0E
+		};
 
 		typedef struct midiMessage_t
 		{
-			char MessageRaw[20];
+			union midiMessage_u
+			{
+				unsigned char MessageRaw[20];
+				struct Message_t
+				{
+					struct StatusByte_t
+					{
+						MidiCommand_e Command : 4;
+						unsigned char Channel : 4;
+					}StatusByte;
+					unsigned char Key;
+					unsigned char Velocity;
+					unsigned char Reserve[17];
+				}Message;
+			}U;
 			size_t Len;
 		} MidiMessage;
 
-
-
 	private:
+		typedef char* MidiDataRaw_p;
+		typedef snd_rawmidi_t MidiHandle_t;
 		std::string _Device;
 		MidiHandle_t* _MidiHandle;
 		int _MidiInputThread_id;
@@ -545,6 +592,7 @@ namespace misound
 		}
 
 	public:
+
 		AlsaMidi(const std::string device)
 			:_Device(device)
 			, _MidiHandle(nullptr)
@@ -573,11 +621,12 @@ namespace misound
 		bool Open()
 		{
 			int status;
-			int mode = SND_RAWMIDI_SYNC;
+			int mode = SND_RAWMIDI_SYNC | SND_RAWMIDI_NONBLOCK;
 			if ((status = snd_rawmidi_open(NULL, &_MidiHandle, _Device.c_str(), mode)) < 0) {
 				printf("Problem opening MIDI output: %s", snd_strerror(status));
 				return  false;
 			}
+			snd_rawmidi_nonblock(_MidiHandle, 0);
 			return true;
 		}
 
@@ -589,7 +638,7 @@ namespace misound
 		bool Read(midiMessage_t* data)
 		{
 			ssize_t status;
-			if ((status = snd_rawmidi_read(_MidiHandle, data->MessageRaw, data->Len)) < 0) {
+			if ((status = snd_rawmidi_read(_MidiHandle, data->U.MessageRaw, data->Len)) < 0) {
 				printf("Problem writing to MIDI output: %s", snd_strerror(static_cast<int>(status)));
 				return false;
 			}
@@ -599,7 +648,7 @@ namespace misound
 		bool Write(midiMessage_t* data)
 		{
 			ssize_t status;
-			if ((status = snd_rawmidi_write(_MidiHandle, data, 3)) < 0) {
+			if ((status = snd_rawmidi_write(_MidiHandle, data->U.MessageRaw, 3)) < 0) {
 				printf("Problem writing to MIDI output: %s", snd_strerror(static_cast<int>(status)));
 				return false;
 			}
