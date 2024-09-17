@@ -31,6 +31,7 @@ namespace misound
 		bool _ready;
 		bool _play;
 		SoundFormat _soundFormat;
+		std::string _Soundcard;
 
 		bool open(unsigned int rate, unsigned int channels)
 		{
@@ -38,14 +39,19 @@ namespace misound
 			unsigned int tmp = 0;
 			snd_pcm_hw_params_t* params;
 			_snd_pcm_format usedFormat = SND_PCM_FORMAT_UNKNOWN;
-
-			printf("Alsa stream :open channels = %d rate = %d\n",channels,rate);
+			std::string confString("plug:dmix");
+			if (_Soundcard != "")
+			{
+				confString.append(":");
+			}
+			confString.append(_Soundcard);
+			printf("Alsa stream Crad %s :open channels = %d rate = %d\n",channels,rate, confString.c_str());
 			/* Open the PCM device in playback mode */
 
-			pcm = snd_pcm_open(&_alsaHandle, "plug:dmix", SND_PCM_STREAM_PLAYBACK, 0);
+			pcm = snd_pcm_open(&_alsaHandle, confString.c_str(), SND_PCM_STREAM_PLAYBACK, 0);
 			if (pcm < 0)
 			{
-				printf("ERROR: Can't open \"%s\" PCM device. %s\n", "plug:dmix", snd_strerror(pcm));
+				printf("ERROR: Can't open \"%s\" PCM device. %s\n", confString.c_str(), snd_strerror(pcm));
 				return false;
 			}
 
@@ -171,6 +177,16 @@ namespace misound
 
 		}
 
+		bool playWaveIntern()
+		{
+			if (!open(_rate, _channels))
+			{
+				return false;
+			}
+			startThread();
+			return true;
+		}
+
 
 
 	public:
@@ -184,6 +200,7 @@ namespace misound
 			, _loop(false)
 			, _play(false)
 			, _soundFormat(format)
+			, _Soundcard("")
 
 		{
 
@@ -207,12 +224,7 @@ namespace misound
 			_waveDataSize = framesCnt * _channels * static_cast<unsigned long>(_soundFormat);
 			_waveData = pWave;
 
-			if (!open(_rate, _channels))
-			{
-				return false;
-			}
-			startThread();
-			return true;
+			return playWaveIntern();
 		}
 
 		void stopWave()
@@ -224,6 +236,20 @@ namespace misound
 
 			}
 
+		}
+
+		bool setSoundcard(const std::string soundcard)
+		{
+			_Soundcard = soundcard;
+			if (_playing)
+			{
+				//stop proc
+				_play = false;
+				while (_playing) {}
+				//restart playing
+				return playWaveIntern();
+			}
+			return true;
 		}
 
 		bool playing()

@@ -47,6 +47,7 @@ namespace misound
 
 		void play();
 		void stop();
+		bool changeSoundcard(const std::string soundcard);
 
 		bool isPlaying() const
 		{

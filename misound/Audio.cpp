@@ -2,6 +2,7 @@
 #include <inttypes.h>
 #include <pthread.h>
 #include "Alsa.h"
+#include <vector>
 
 static pthread_mutex_t  SHAKE_BufferMutex = PTHREAD_MUTEX_INITIALIZER;
 void shakeLock() { pthread_mutex_lock(&SHAKE_BufferMutex); }
@@ -150,6 +151,15 @@ bool misound::Audio::setVolume(int volume)
 	return _volume.setVolume(volume);
 }
 
+bool misound::Audio::changeSoundcard(const std::string soundcard)
+{
+	map<string, Wave>::iterator it;
+	for (it = _waves.begin(); it != _waves.end(); it++)
+	{
+		it->second.changeSoundcard(soundcard);
+	}
+	return true;
+}
 
 int misound::Audio::getWaves(string dir, vector<string> &waves)
 {

@@ -25,7 +25,6 @@ misound::Wave::Wave(const string& path,const string& name, bool loop)
 		return;
 	}
 	
-	int test = (_info.format & SF_FORMAT_PCM_16);
 	if ((_info.format & 0x0f) == SF_FORMAT_PCM_16)
 	{
 		_format = misound::SoundFormat::SoundFormat_S16_LE;
@@ -124,5 +123,10 @@ void misound::Wave::play()
 void misound::Wave::stop()
 {
 	_stream->stopWave();
+}
+
+bool misound::Wave::changeSoundcard(const std::string soundcard)
+{
+	return _stream->setSoundcard(soundcard);
 }
 

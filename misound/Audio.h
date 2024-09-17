@@ -44,6 +44,7 @@ namespace misound
 		bool stopWave(const string& name);
 		bool stopAllWave();
 		bool setVolume(int volume);
+		bool changeSoundcard(const std::string soundcard);
 	};
 }
 
