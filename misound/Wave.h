@@ -19,10 +19,10 @@ namespace misound
 		sawTooth
 	}WaveType;
 
-	class Wave
+	class Wave 
 	{
 		SNDFILE* _waveFile;
-	protected:
+	private:
 		bool			_error;
 		unsigned char* _waveData;
 		SF_INFO			_info;
@@ -33,12 +33,15 @@ namespace misound
 		string _name;
 		string _path;
 		misound::SoundFormat _format;
-		misound::AlsaStream* _stream;
+		misound::AlsaStream _stream;
+		std::string _SoundCard;
+
+
+		const std::string _DefaultSoundCard = "plug:dmix0";
 
 	public:
 
-		Wave(const string& path, const string& name, bool loop);
-		Wave(const string& name, bool loop);
+		Wave(const std::string& path, const std::string& name, const std::string& soundCard, bool loop);
 		Wave();
 		Wave(const Wave& other);
 
@@ -47,11 +50,10 @@ namespace misound
 
 		void play();
 		void stop();
-		bool changeSoundcard(const std::string soundcard);
 
-		bool isPlaying() const
+		bool isPlaying()
 		{
-			return _stream->playing();
+			return _stream.playing();
 		}
 
 		unsigned long  samplePosition() const;
@@ -61,6 +63,7 @@ namespace misound
 		int error();
 
 		const std::string& getName() const { return _name; }
+		const std::string& getPath() const { return _path; }
 		bool loop() const { return _loop; }
 		void setLoop(bool loop)
 		{
@@ -68,6 +71,12 @@ namespace misound
 		}
 		unsigned char* waveData() const { return _waveData; }
 		const SF_INFO& info();
+
+		virtual void changeSoundcard(const std::string& device)
+		{
+			_SoundCard = device;
+			_stream.changeSoundcard(_SoundCard);
+		}
 
 	};
 }

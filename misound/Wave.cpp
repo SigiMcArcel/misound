@@ -1,7 +1,7 @@
 #include "Wave.h"
 
 
-misound::Wave::Wave(const string& path,const string& name, bool loop)
+misound::Wave::Wave(const string& path,const string& name, const std::string& soundCard, bool loop)
 	:_waveFile(NULL)
 	,_error(false)
 	,_waveData(NULL)
@@ -12,7 +12,8 @@ misound::Wave::Wave(const string& path,const string& name, bool loop)
 	,_playing(false)
 	,_name(name)
 	,_path(path)
-	,_stream(NULL)
+	,_stream((unsigned int)_info.samplerate, _info.channels, _format, soundCard)
+	,_SoundCard(soundCard)
 {
 	
 	
@@ -51,13 +52,12 @@ misound::Wave::Wave(const string& path,const string& name, bool loop)
 		return;
 
 	}
-	_stream = new AlsaStream((unsigned int)_info.samplerate,_info.channels,_format);
+	//_stream = new AlsaStream((unsigned int)_info.samplerate,_info.channels,_format,_SoundCard);
 }
 
 misound::Wave:: Wave(const Wave& other)
 	:_waveFile(other._waveFile)
 	, _error(other._error)
-	, _waveData(other._waveData)
 	, _info(other._info)
 	, _loop(other._loop)
 	, _samplePosition(other._samplePosition)
@@ -65,8 +65,15 @@ misound::Wave:: Wave(const Wave& other)
 	, _playing(other._playing)
 	, _name(other._name)
 	, _stream(other._stream)
+	, _SoundCard(other._SoundCard)
 {
-	
+	_waveData = (unsigned char*)malloc(static_cast<size_t>(_waveSize));
+	if (_waveData == nullptr)
+	{
+		printf("Wave error malloc\n");
+		return;
+	}
+	::memcpy(_waveData, other._waveData, _waveSize);
 };
 
 misound::Wave::Wave()
@@ -79,7 +86,8 @@ misound::Wave::Wave()
 	, _waveSize(0)
 	, _playing(false)
 	, _name("")
-	, _stream(NULL)
+	, _stream((unsigned int)44100, 2, misound::SoundFormat::SoundFormat_S16_LE, _DefaultSoundCard)
+	, _SoundCard(_DefaultSoundCard)
 {
 	
 };
@@ -109,24 +117,19 @@ misound::Wave::~Wave()
 		free(_waveData);
 	}
 	_waveData = NULL;
-	delete _stream;
 }
 
 void misound::Wave::play()
 {
-	if(!_stream->playing())
+	if(!_stream.playing())
 	{
-		_stream->playWave(_waveData, static_cast<unsigned long>(_info.frames), _loop);
+		_stream.playWave(_waveData, static_cast<unsigned long>(_info.frames), _loop);
 	}	
 }
 
 void misound::Wave::stop()
 {
-	_stream->stopWave();
+	_stream.stopWave();
 }
 
-bool misound::Wave::changeSoundcard(const std::string soundcard)
-{
-	return _stream->setSoundcard(soundcard);
-}
 

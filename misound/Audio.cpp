@@ -13,9 +13,34 @@ using namespace std;
 misound::Audio::Audio()
 	:_waves()
 	,_volume(20)
+	,_SoundCard(_DefaultSoundCard)
 {
 }
 
+misound::Audio::Audio(const std::string& soundCard)
+	:_waves()
+	, _volume(20)
+	, _SoundCard(soundCard)
+{
+}
+
+misound::Audio::Audio(const std::string& soundCard, const std::string& rootPath)
+	:_waves()
+	, _volume(20)
+	, _SoundCard(soundCard)
+	, _RootPath(rootPath)
+{
+
+}
+
+misound::Audio::Audio(const Audio& other)
+:_waves(other._waves)
+,_volume(other._volume)
+,_SoundCard(other._SoundCard)
+,_RootPath(other._RootPath)
+{
+	printf("Audio copy waves %d soundard %s \n",other._waves.size(), other._SoundCard);
+}
 
 misound::Audio::~Audio()
 {
@@ -107,20 +132,41 @@ bool misound::Audio::stopAllWave()
 
 bool misound::Audio::addWave(const Wave& wave)
 {
-	_waves[wave.getName()] = wave;
-	printf( "cAudio::addWave : add Wave %s\n", wave.getName().c_str());
-	//cWave w = _waves[wave.getName()];
+	_waves.insert(std::make_pair(wave.getName(),wave));
+	printf( "cAudio::addWave : add Wave %s from %s count %d\n", wave.getName().c_str(), wave.getPath().c_str(),_waves.size());
 	return true;
 }
  
 bool misound::Audio::addWave(const string & path, const string & name,bool loop = false)
 {
-	Wave* w = new Wave(path, name, loop);
-	if (w->error() > 0)
+	Wave w(path, name, _SoundCard, loop);
+	
+	if (w.error() > 0)
 	{
 		return false;
 	}
-	addWave(*w);
+	addWave(w);
+	return true;
+}
+
+bool misound::Audio::addWave(const string& name, bool loop = false)
+{
+	if (_RootPath == "")
+	{
+		printf("cAudio::addWave : add Wave %s error: Wavepath not set\n", name);
+		return false;
+	}
+	std::string path(_RootPath);
+	path.append("/");
+	path.append(name);
+	path.append(".wav");
+	Wave w(path, name, _SoundCard, loop);
+	
+	if (w.error() > 0)
+	{
+		return false;
+	}
+	addWave(w);
 	return true;
 }
 
@@ -140,7 +186,7 @@ bool misound::Audio::addWavesFromFolder(const string & folder,bool loop)
 		path.append(name);
 		replace(name, ".wav", "");
 		
-		Wave* w = new Wave(path, name, loop);
+		Wave* w = new Wave(path, name, _SoundCard, loop);
 		addWave(*w);
 	}
 	return true;
