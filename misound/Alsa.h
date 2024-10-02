@@ -6,16 +6,12 @@
 #include <vector>
 #include <mutex>
 #include <math.h>
+#include "miSoundTypes.h"
 
 namespace misound
 {
-	#define MAX_LINEAR_DB_SCALE 24
+#define MAX_LINEAR_DB_SCALE 24
 
-	enum class SoundFormat
-	{
-		SoundFormat_S16_LE = 2,
-		SoundFormat_S24_LE = 3
-	};
 
 	class AlsaSoundcardInterface
 	{
@@ -23,22 +19,24 @@ namespace misound
 		virtual void changeSoundcard(const std::string& device) = 0;
 	};
 
-	class AlsaStream : public AlsaSoundcardInterface
+	class AlsaStream
+		:public AlsaSoundcardInterface
 	{
-		snd_pcm_t* _alsaHandle;
-		unsigned int _rate;
-		unsigned int _channels;
-		unsigned long _framesPerBuffer;
-		unsigned char* _waveData;
-		unsigned long	_waveDataSize;
-		int _playThread_id;
-		pthread_t _playThread;
-		bool _playing;
-		bool _loop;
-		bool _ready;
-		bool _play;
-		SoundFormat _soundFormat;
+		snd_pcm_t* _AlsaHandle;
+		unsigned int _Rate;
+		unsigned int _Channels;
+		unsigned long _FramesPerBuffer;
+		misound::WaveData_t _WaveData;
+		unsigned long	_WaveDataSize;
+		int _PlayThread_id;
+		pthread_t _PlayThread;
+		bool _Playing;
+		bool _Loop;
+		bool _Ready;
+		bool _Play;
+		misound::SoundFormat _SoundFormat;
 		std::string _Soundcard;
+		bool _Valid;
 
 		bool open(unsigned int rate, unsigned int channels)
 		{
@@ -47,10 +45,10 @@ namespace misound
 			snd_pcm_hw_params_t* params;
 			_snd_pcm_format usedFormat = SND_PCM_FORMAT_UNKNOWN;
 
-			printf("Alsa stream Card %s :open channels = %d rate = %d card = %s\n", _channels, rate, _Soundcard.c_str());
+			printf("Alsa stream Card %s :open channels = %d rate = %d\n", _Soundcard.c_str(), _Channels, rate);
 			/* Open the PCM device in playback mode */
 
-			pcm = snd_pcm_open(&_alsaHandle, _Soundcard.c_str(), SND_PCM_STREAM_PLAYBACK, 0);
+			pcm = snd_pcm_open(&_AlsaHandle, _Soundcard.c_str(), SND_PCM_STREAM_PLAYBACK, 0);
 			if (pcm < 0)
 			{
 				printf("ERROR: Can't open \"%s\" PCM device. %s\n", _Soundcard.c_str(), snd_strerror(pcm));
@@ -60,10 +58,10 @@ namespace misound
 			/* Allocate parameters object and fill it with default values*/
 			snd_pcm_hw_params_alloca(&params);
 
-			snd_pcm_hw_params_any(_alsaHandle, params);
+			snd_pcm_hw_params_any(_AlsaHandle, params);
 
 			/* Set parameters */
-			pcm = snd_pcm_hw_params_set_access(_alsaHandle, params, SND_PCM_ACCESS_RW_INTERLEAVED);
+			pcm = snd_pcm_hw_params_set_access(_AlsaHandle, params, SND_PCM_ACCESS_RW_INTERLEAVED);
 
 			if (pcm < 0)
 			{
@@ -71,11 +69,11 @@ namespace misound
 				close();
 				return false;
 			}
-			if (_soundFormat == SoundFormat::SoundFormat_S16_LE)
+			if (_SoundFormat == SoundFormat::SoundFormat_S16_LE)
 			{
 				usedFormat = SND_PCM_FORMAT_S16_LE;
 			}
-			else if (_soundFormat == SoundFormat::SoundFormat_S24_LE)
+			else if (_SoundFormat == SoundFormat::SoundFormat_S24_LE)
 			{
 				usedFormat = SND_PCM_FORMAT_S24_3LE;
 			}
@@ -86,7 +84,7 @@ namespace misound
 				return false;
 			}
 
-			pcm = snd_pcm_hw_params_set_format(_alsaHandle, params, usedFormat);
+			pcm = snd_pcm_hw_params_set_format(_AlsaHandle, params, usedFormat);
 			if (pcm < 0)
 			{
 				printf("ERROR: Can't set format. %s\n", snd_strerror(pcm));
@@ -94,7 +92,7 @@ namespace misound
 				return false;
 			}
 
-			pcm = snd_pcm_hw_params_set_channels(_alsaHandle, params, channels);
+			pcm = snd_pcm_hw_params_set_channels(_AlsaHandle, params, channels);
 			if (pcm < 0)
 			{
 				printf("ERROR: Can't set channels number. %s\n", snd_strerror(pcm));
@@ -102,7 +100,7 @@ namespace misound
 				return false;
 			}
 
-			pcm = snd_pcm_hw_params_set_rate_near(_alsaHandle, params, &rate, 0);
+			pcm = snd_pcm_hw_params_set_rate_near(_AlsaHandle, params, &rate, 0);
 			if (pcm < 0)
 			{
 				printf("ERROR: Can't set rate. %s\n", snd_strerror(pcm));
@@ -111,11 +109,11 @@ namespace misound
 			}
 
 			snd_pcm_uframes_t uf = 2048;
-			snd_pcm_hw_params_set_buffer_size_near(_alsaHandle, params,
+			snd_pcm_hw_params_set_buffer_size_near(_AlsaHandle, params,
 				&uf);
 
 			/* Write parameters */
-			pcm = snd_pcm_hw_params(_alsaHandle, params);
+			pcm = snd_pcm_hw_params(_AlsaHandle, params);
 			if (pcm < 0)
 			{
 				printf("ERROR: Can't set harware parameters. %s\n", snd_strerror(pcm));
@@ -126,9 +124,9 @@ namespace misound
 			//snd_pcm_nonblock(_alsaHandle, 1);
 
 			/* Resume information */
-			printf("PCM name: '%s'\n", snd_pcm_name(_alsaHandle));
+			printf("PCM name: '%s'\n", snd_pcm_name(_AlsaHandle));
 
-			printf("PCM state: %s\n", snd_pcm_state_name(snd_pcm_state(_alsaHandle)));
+			printf("PCM state: %s\n", snd_pcm_state_name(snd_pcm_state(_AlsaHandle)));
 
 			snd_pcm_hw_params_get_channels(params, &tmp);
 			printf("channels: %i ", tmp);
@@ -142,7 +140,7 @@ namespace misound
 			printf("rate: %d bps\n", tmp);
 
 			/* Allocate buffer to hold single period */
-			snd_pcm_hw_params_get_period_size(params, &_framesPerBuffer, 0);
+			snd_pcm_hw_params_get_period_size(params, &_FramesPerBuffer, 0);
 
 			snd_pcm_hw_params_get_period_time(params, &tmp, NULL);
 			return true;
@@ -150,57 +148,84 @@ namespace misound
 
 		void close()
 		{
-			snd_pcm_drop(_alsaHandle);
-			snd_pcm_close(_alsaHandle);
+			snd_pcm_drop(_AlsaHandle);
+			snd_pcm_close(_AlsaHandle);
 		}
 
 		void  startThread()
 		{
 			struct sched_param params;
-			_playThread_id = pthread_create(&_playThread, NULL, AlsaStream::PlayProc, this);
-			pthread_setname_np(_playThread, "stream");
+			_PlayThread_id = pthread_create(&_PlayThread, NULL, AlsaStream::PlayProc, this);
+			pthread_setname_np(_PlayThread, "stream");
 			params.__sched_priority = 50;
-			pthread_setschedparam(_playThread, SCHED_FIFO, &params);
+			pthread_setschedparam(_PlayThread, SCHED_FIFO, &params);
 
 		}
 
 		void  stopThread()
 		{
-			pthread_join(_playThread, NULL);
+			pthread_join(_PlayThread, NULL);
 
 		}
 
 		bool playWaveIntern()
 		{
-			if (!open(_rate, _channels))
+			if (!open(_Rate, _Channels))
 			{
 				return false;
 			}
 			startThread();
+			//_Timer.Start(10);
 			return true;
 		}
 
 	public:
-		AlsaStream(unsigned int rate, unsigned int channels, SoundFormat format,const std::string& soundCard)
-			:_rate(rate)
-			, _channels(channels)
-			, _framesPerBuffer(0)
-			, _playThread_id(0)
-			, _playThread()
-			, _playing(false)
-			, _loop(false)
-			, _play(false)
-			, _soundFormat(format)
-			, _Soundcard(soundCard) //"plug:dmix"
-
+		AlsaStream()
+			:_Rate(0)
+			, _Channels(0)
+			, _FramesPerBuffer(0)
+			, _PlayThread_id(0)
+			, _PlayThread()
+			, _Playing(false)
+			, _Loop(false)
+			, _Play(false)
+			, _SoundFormat(SoundFormat::SoundFormat_NONE)
+			, _Soundcard("")
+			, _Valid(false)
 		{
 
+		}
+		AlsaStream(const AlsaStream& other) = default;
+		AlsaStream(unsigned int rate, unsigned int channels, SoundFormat format, const std::string& soundCard)
+			:_Rate(rate)
+			, _Channels(channels)
+			, _FramesPerBuffer(0)
+			, _PlayThread_id(0)
+			, _PlayThread()
+			, _Playing(false)
+			, _Loop(false)
+			, _Play(false)
+			, _SoundFormat(format)
+			, _Soundcard(soundCard) //"plug:dmix"
+			, _Valid(true)
+
+		{
+			if ((_Rate == 0)
+				|| (_Channels == 0)
+				|| (_SoundFormat != SoundFormat::SoundFormat_S16_LE)
+				|| (_SoundFormat != SoundFormat::SoundFormat_S24_LE)
+				|| (soundCard == "")
+				)
+			{
+				printf("Alsa.h Alsa : Could not create stream");
+				_Valid = false;
+			}
+			printf("Alsatream Card %sconstructor channels %d rate = %d\n", _Soundcard.c_str(), _Channels, _Rate);
 		}
 
 		virtual ~AlsaStream()
 		{
-
-			_play = false;
+			_Play = false;
 		}
 
 		virtual void changeSoundcard(const std::string& device)
@@ -208,26 +233,30 @@ namespace misound
 			setSoundcard(device);
 		}
 
-		bool playWave(unsigned char* pWave, const unsigned long framesCnt, bool loop)
+		void setup(unsigned int rate, unsigned int channels, SoundFormat format, const std::string& soundCard)
 		{
-			if (pWave == NULL)
-			{
-				return false;
-			}
-			_loop = loop;
-			_playing = true;
-			_play = true;
-			_waveDataSize = framesCnt * _channels * static_cast<unsigned long>(_soundFormat);
-			_waveData = pWave;
+			_Rate = rate;
+			_Channels = channels;
+			_SoundFormat = format;
+			_Soundcard = soundCard;
+		}
+
+		bool playWave(misound::WaveData_t wave, const unsigned long framesCnt, bool loop)
+		{
+			_Loop = loop;
+			_Playing = true;
+			_Play = true;
+			_WaveDataSize = framesCnt * _Channels * static_cast<unsigned long>(_SoundFormat);
+			_WaveData = wave;
 
 			return playWaveIntern();
 		}
 
 		void stopWave()
 		{
-			if (_playing)
+			if (_Playing)
 			{
-				_play = false;
+				_Play = false;
 				//stopThread();
 
 			}
@@ -236,23 +265,32 @@ namespace misound
 
 		bool setSoundcard(const std::string soundcard)
 		{
+			int timeout = 100;
 			_Soundcard = soundcard;
-			if (_playing)
+			if (_Playing)
 			{
-				//stop proc
-				close();
-				return open(_rate, _channels);
+				_Play = false;
+				while (_Playing)
+				{
+					usleep(10000);
+					timeout--;
+					if (timeout <= 0)
+					{
+						printf("stop wave timeOut\n");
+						return false;
+					}
+				}
+				_Play = true;
+				_Playing = true;
+				return playWaveIntern();
 			}
-			
 			return true;
 		}
 
 		bool playing()
 		{
-			return _playing;
+			return _Playing;
 		}
-
-
 
 		static void* PlayProc(void* p)
 		{
@@ -263,7 +301,7 @@ namespace misound
 			AlsaStream* stream = (AlsaStream*)p;
 			snd_pcm_sframes_t pcm = 0;
 			unsigned long position = 0, nextPosition = 0;
-			unsigned long framesToWrite = stream->_framesPerBuffer;
+			unsigned long framesToWrite = stream->_FramesPerBuffer;
 
 			/*struct sched_param params;
 			pthread_t this_thread = pthread_self();
@@ -272,55 +310,57 @@ namespace misound
 
 			do
 			{
-				nextPosition += (stream->_framesPerBuffer * stream->_channels * static_cast<unsigned long>(stream->_soundFormat));
+				nextPosition += (stream->_FramesPerBuffer * stream->_Channels * static_cast<unsigned long>(stream->_SoundFormat));
 				//Ist die Anzahl verbliebener Frames im wave kleiner als die Anzahl frames per buffer dann:
-				if (nextPosition >= stream->_waveDataSize)
+				if (nextPosition >= stream->_WaveDataSize)
 				{
-					framesToWrite = (stream->_waveDataSize - position) / (stream->_channels * static_cast<unsigned long>(stream->_soundFormat));
+					framesToWrite = (stream->_WaveDataSize - position) / (stream->_Channels * static_cast<unsigned long>(stream->_SoundFormat));
 				}
-				pcm = snd_pcm_writei(stream->_alsaHandle
-					, &stream->_waveData[position]
+				pcm = snd_pcm_writei(stream->_AlsaHandle
+					, &stream->_WaveData[position]
 					, static_cast<snd_pcm_uframes_t>(framesToWrite));
 				if (pcm == -EPIPE) {
-					if (snd_pcm_prepare(stream->_alsaHandle) < 0)
+					if (snd_pcm_prepare(stream->_AlsaHandle) < 0)
 					{
 						printf("super error\n");
 					}
 				}
 
-				position += (stream->_framesPerBuffer * stream->_channels * static_cast<unsigned long>(stream->_soundFormat));
+				position += (stream->_FramesPerBuffer * stream->_Channels * static_cast<unsigned long>(stream->_SoundFormat));
 
-
-				if (stream->_loop)
+				if (stream->_Loop)
 				{
-					if (position >= stream->_waveDataSize)
+					if (position >= stream->_WaveDataSize)
 					{
 						position = 0;
 						nextPosition = 0;
-						framesToWrite = stream->_framesPerBuffer;
+						framesToWrite = stream->_FramesPerBuffer;
 					}
 				}
 
-			} while ((position <= stream->_waveDataSize) && stream->_play);
+			} while ((position <= stream->_WaveDataSize) && stream->_Play);
 
 			stream->close();
-			stream->_playing = false;
+			stream->_Playing = false;
 			return NULL;
 		}
 	};
 
+
+
 	class AlsaVolume
 	{
 	private:
-		int _volumeThread_id;
-		pthread_t _volumeThread;
-		double _volumeValue;
-		int _intervall;
-		snd_mixer_t* _mixerHandle;
+		int _VolumeThread_id;
+		pthread_t _VolumeThread;
+		double _VolumeValue;
+		int _Intervall;
+		snd_mixer_t* _MixerHandle;
 		snd_mixer_elem_t* _AlsaElem;
 		std::string _SoundCard;
-		bool _stop;
-		int _error = 0;
+		std::string _Hw;
+		bool _Stop;
+		int _Error = 0;
 
 		/* from alsa-utils/alsamixer/volume_mapping.c
 *
@@ -368,7 +408,7 @@ namespace misound
 				return snd_mixer_selem_set_playback_volume_all(elem, value);
 			}
 
-			
+
 
 			if (use_linear_dB_scale(min, max))
 			{
@@ -386,69 +426,134 @@ namespace misound
 			return snd_mixer_selem_set_playback_dB_all(elem, value, dir);
 		}
 
+		bool getUnderlyingHardware() {
+			
+			int err;
+			const char* device_name = _SoundCard.c_str();
+			snd_pcm_t* pcm;
+
+			err = snd_pcm_open(&pcm, device_name, SND_PCM_STREAM_PLAYBACK, SND_PCM_NONBLOCK);
+			if (err < 0) {
+				fprintf(stderr, "Failed to open audio device '%s': %s\n", device_name, snd_strerror(err));
+				return false;
+			}
+
+			snd_pcm_info_t* info;
+			err = snd_pcm_info_malloc(&info);
+			if (err < 0) {
+				fprintf(stderr, "Failed to allocate PCM info: %s\n", snd_strerror(err));
+				snd_pcm_close(pcm);
+				return false;
+			}
+			err = snd_pcm_info(pcm, info);
+			if (err < 0) {
+				fprintf(stderr, "Failed to get PCM device info: %s\n", snd_strerror(err));
+				snd_pcm_info_free(info);
+				snd_pcm_close(pcm);
+				return false;
+			}
+
+			int card_no = snd_pcm_info_get_card(info);
+			if (card_no < 0) {
+				fprintf(stderr, "Failed to get PCM card number: %s\n", snd_strerror(card_no));
+				snd_pcm_info_free(info);
+				snd_pcm_close(pcm);
+				return false;
+			}
+
+			unsigned dev_no = snd_pcm_info_get_device(info);
+
+			printf("The ALSA path is: /dev/snd/pcmC%dD%up\n", card_no, dev_no);
+			snd_pcm_info_free(info);
+			snd_pcm_close(pcm);
+
+			
+			_Hw = "";
+			_Hw.append("hw:");
+			_Hw.append(std::to_string(card_no));
+
+			printf("Underlying hardware device: %s \n", _Hw.c_str());
+			return true;
+		}
+
 		void  startThread()
 		{
-			_stop = false;
-			_volumeThread_id = pthread_create(&_volumeThread, NULL, AlsaVolume::VolumeProc, this);
-			pthread_setname_np(_volumeThread, "volume");
+			_Stop = false;
+			_VolumeThread_id = pthread_create(&_VolumeThread, NULL, AlsaVolume::VolumeProc, this);
+			pthread_setname_np(_VolumeThread, "volume");
+			printf("startThread id = %d\n", _VolumeThread_id);
 		}
 
 		void  stopThread()
 		{
-			_stop = true;
-			if (_volumeThread != 0)
+			_Stop = true;
+			if (_VolumeThread != 0)
 			{
-				pthread_join(_volumeThread, NULL);
+				pthread_join(_VolumeThread, NULL);
 			}
-
 		}
 
 		bool configVolume()
 		{
 			int result = 0;
-
+			snd_ctl_t* handle;
 			snd_mixer_selem_id_t* sid = NULL;
-			const char* card = "hw:0";
+			snd_mixer_elem_t* elem;
+			const char* card = _Hw.c_str();
 			const char* selem_name = "Digital";
+			
 
-			if (_mixerHandle == NULL)
+			if (_MixerHandle == NULL)
 			{
 				return false;
 			}
 
-			result = snd_mixer_attach(_mixerHandle, card);
+			result = snd_mixer_attach(_MixerHandle, card);
 			if (result < 0)
 			{
 				return false;
 			}
-			result = snd_mixer_selem_register(_mixerHandle, NULL, NULL);
+			result = snd_mixer_selem_register(_MixerHandle, NULL, NULL);
 			if (result < 0)
 			{
 				return false;
 			}
-			result = snd_mixer_load(_mixerHandle);
+			result = snd_mixer_load(_MixerHandle);
 			if (result < 0)
 			{
 				return false;
 			}
 
 			snd_mixer_selem_id_alloca(&sid);
-			snd_mixer_selem_id_set_index(sid, 0);
-			snd_mixer_selem_id_set_name(sid, selem_name);
-			_AlsaElem = snd_mixer_find_selem(_mixerHandle, sid);
-			if (_AlsaElem == NULL)
-			{
-				return false;
+			for (elem = snd_mixer_first_elem(_MixerHandle); elem; elem = snd_mixer_elem_next(elem)) {
+				snd_mixer_selem_get_id(elem, sid);
+				if (!snd_mixer_selem_is_active(elem))
+					continue;
+
+				_AlsaElem = snd_mixer_find_selem(_MixerHandle, sid);
+				if (_AlsaElem == NULL)
+				{
+					printf("Als.h Volume mixer %s not found\n", selem_name);
+					return false;
+				}
+				
+				if (snd_mixer_selem_has_playback_volume(elem) && snd_mixer_selem_has_playback_switch(elem) && !snd_mixer_selem_has_capture_volume(elem)) {
+					printf("Simple mixer control found '%s',%i\n", snd_mixer_selem_id_get_name(sid), snd_mixer_selem_id_get_index(sid));
+					snd_mixer_selem_id_set_index(sid, 0);
+					snd_mixer_selem_id_set_name(sid, snd_mixer_selem_id_get_name(sid));
+					return true;
+				}
 			}
+
 			return true;
 		}
 
 		bool openVolume(int interval)
 		{
-			int result = snd_mixer_open(&_mixerHandle, 0);
+			int result = snd_mixer_open(&_MixerHandle, 0);
 			if (result < 0)
 			{
-				_mixerHandle = NULL;
+				_MixerHandle = NULL;
 				return false;
 			}
 			if (configVolume())
@@ -462,31 +567,37 @@ namespace misound
 		bool closeVolume()
 		{
 			stopThread();
-			if (_mixerHandle)
+			if (_MixerHandle)
 			{
-				snd_mixer_close(_mixerHandle);
-				_mixerHandle = NULL;
+				snd_mixer_close(_MixerHandle);
+				_MixerHandle = NULL;
 				return true;
 			}
 			return false;
 		}
 
 	public:
-		AlsaVolume(unsigned int intervall)
-			: _volumeThread_id(0)
-			, _volumeThread()
-			, _volumeValue(0)
-			, _intervall(intervall)
-			, _mixerHandle(NULL)
+		AlsaVolume(unsigned int intervall,const std::string& soundCard)
+			: _VolumeThread_id(0)
+			, _VolumeThread()
+			, _VolumeValue(0)
+			, _Intervall(intervall)
+			, _MixerHandle(NULL)
 			, _AlsaElem(NULL)
-			, _stop(false)
-			, _error(0)
+			, _SoundCard(soundCard)
+			, _Hw("")
+			, _Stop(false)
+			, _Error(0)
 
 		{
-			_error = 0;
-			if (!openVolume(_intervall))
+			_Error = 0;
+			if (!getUnderlyingHardware())
 			{
-				_error = -1;
+				_Error = -1;
+			}
+			if (!openVolume(_Intervall))
+			{
+				_Error = -1;
 			}
 			volume_normalized_set(_AlsaElem, 0, 0);
 		}
@@ -496,19 +607,37 @@ namespace misound
 			closeVolume();
 		}
 
+		bool setSoundcard(const std::string& soundCard)
+		{
+			printf("Alsa.h Volume::setSoundcard %s\n", soundCard.c_str());
+			_SoundCard = soundCard;
+			if (_MixerHandle != nullptr)
+			{
+				closeVolume();
+				if (!getUnderlyingHardware())
+				{
+					return false;
+				}
+				openVolume(_Intervall);
+			}
+			
+			return true;
+		}
+
 		bool setVolume(double volume)
 		{
-			if (_error < 0)
+			if (_Error < 0)
 			{
+				printf("setVolume error \n");
 				return false;
 			}
-			_volumeValue = volume;
+			_VolumeValue = volume;
 			return true;
 		}
 
 		static void* VolumeProc(void* p)
 		{
-			
+
 			int last = 0;
 			int current = 0;
 			if (p == NULL)
@@ -516,25 +645,26 @@ namespace misound
 				return NULL;
 			}
 			AlsaVolume* volume = (AlsaVolume*)p;
-			while (!volume->_stop)
+			while (!volume->_Stop)
 			{
-				current = static_cast<int>(volume->_volumeValue);
-
+				current = static_cast<int>(volume->_VolumeValue);
+				volume_normalized_set(volume->_AlsaElem, static_cast<double>(current) / 100.0, 0);
+#if 0
 				while (current > last)
 				{
 					volume_normalized_set(volume->_AlsaElem, static_cast<double>(last) / 100.0, 0);
 					last++;
-					usleep(volume->_intervall * 1000);
+					usleep(volume->_Intervall * 1000);
 
 				}
 				while (current < last)
 				{
 					volume_normalized_set(volume->_AlsaElem, static_cast<double>(last) / 100.0, 0);
-					usleep(volume->_intervall * 1000);
+					usleep(volume->_Intervall * 1000);
 					last--;
 				}
-				
-				usleep(volume->_intervall * 1000);
+#endif
+				usleep(volume->_Intervall * 1000);
 			}
 
 			return NULL;
@@ -543,7 +673,7 @@ namespace misound
 
 	class AlsaMidi
 	{
-		
+
 	public:
 		enum class MidiCommand_e
 		{

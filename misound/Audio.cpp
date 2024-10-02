@@ -12,46 +12,35 @@ using namespace std;
 
 misound::Audio::Audio()
 	:_waves()
-	,_volume(20)
+	,_volume(5,_DefaultSoundCard)
 	,_SoundCard(_DefaultSoundCard)
 {
 }
 
 misound::Audio::Audio(const std::string& soundCard)
 	:_waves()
-	, _volume(20)
+	, _volume(5, soundCard)
 	, _SoundCard(soundCard)
 {
 }
 
 misound::Audio::Audio(const std::string& soundCard, const std::string& rootPath)
 	:_waves()
-	, _volume(20)
+	, _volume(5, soundCard)
 	, _SoundCard(soundCard)
 	, _RootPath(rootPath)
 {
-
-}
-
-misound::Audio::Audio(const Audio& other)
-:_waves(other._waves)
-,_volume(other._volume)
-,_SoundCard(other._SoundCard)
-,_RootPath(other._RootPath)
-{
-	printf("Audio copy waves %d soundard %s \n",other._waves.size(), other._SoundCard);
+	
 }
 
 misound::Audio::~Audio()
 {
 }
 
-
-
 bool misound::Audio::playWave(const string& name, bool restart )
 {
-	
-	if (_waves.count(name) == 0)
+	auto it = _waves.find(name);
+	if (it == _waves.end())
 	{
 		return false;
 	}
@@ -65,8 +54,8 @@ bool misound::Audio::playWave(const string& name, bool restart )
 
 bool misound::Audio::playWave(const string& name, bool restart,bool loop)
 {
-	
-	if (_waves.count(name) == 0)
+	auto it = _waves.find(name);
+	if (it == _waves.end())
 	{
 		return false;
 	}
@@ -103,7 +92,8 @@ bool misound::Audio::playWave(const int num, bool restart )
 
 bool misound::Audio::isPlaying(const string& name)
 {
-	if (_waves.count(name) == 0)
+	auto it = _waves.find(name);
+	if (it == _waves.end())
 	{
 		return false;
 	}
@@ -112,7 +102,8 @@ bool misound::Audio::isPlaying(const string& name)
 
 bool misound::Audio::stopWave(const string& name)
 {
-	if (_waves.count(name) == 0)
+	auto it = _waves.find(name);
+	if (it == _waves.end())
 	{
 		return false;
 	}
@@ -153,7 +144,7 @@ bool misound::Audio::addWave(const string& name, bool loop = false)
 {
 	if (_RootPath == "")
 	{
-		printf("cAudio::addWave : add Wave %s error: Wavepath not set\n", name);
+		printf("cAudio::addWave : add Wave %s error: Wavepath not set\n", name.c_str());
 		return false;
 	}
 	std::string path(_RootPath);
@@ -194,16 +185,18 @@ bool misound::Audio::addWavesFromFolder(const string & folder,bool loop)
 
 bool misound::Audio::setVolume(int volume)
 {
-	return _volume.setVolume(volume);
+	return _volume.setVolume(static_cast<double>(volume));
 }
 
 bool misound::Audio::changeSoundcard(const std::string soundcard)
 {
 	map<string, Wave>::iterator it;
+	printf("Audio::changeSoundcard %s\n", soundcard.c_str());
 	for (it = _waves.begin(); it != _waves.end(); it++)
 	{
 		it->second.changeSoundcard(soundcard);
 	}
+	_volume.setSoundcard(soundcard);
 	return true;
 }
 

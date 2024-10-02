@@ -90,6 +90,7 @@
   <ItemGroup>
     <ClInclude Include="Alsa.h" />
     <ClInclude Include="Audio.h" />
+    <ClInclude Include="miSoundTypes.h" />
     <ClInclude Include="Wave.h" />
   </ItemGroup>
   <ItemGroup>
@@ -104,11 +105,11 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'">
     <Link>
-      <LibraryDependencies>sndfile;pthread;asound</LibraryDependencies>
+      <LibraryDependencies>sndfile;pthread;asound;miutils</LibraryDependencies>
       <SharedLibrarySearchPath>/home/root/projects/misound/bin/ARM64/Debug;%(SharedLibrarySearchPath)</SharedLibrarySearchPath>
     </Link>
     <RemotePostBuildEvent>
-      <Command>cp $(RemoteDebuggerCommand) /usr/lib</Command>
+      <Command>cp ~/projects/misound/bin/ARM64/Debug//libmisound.so /usr/lib</Command>
     </RemotePostBuildEvent>
     <ClCompile>
       <AdditionalIncludeDirectories>./;.;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>

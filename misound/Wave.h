@@ -5,36 +5,30 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdint.h>
+#include <memory> 
 #include "Alsa.h"
 
 using namespace std;
 namespace misound
 {
-	typedef enum WaveType_t
-	{
-		file,
-		sine,
-		square,
-		triangle,
-		sawTooth
-	}WaveType;
-
 	class Wave 
-	{
-		SNDFILE* _waveFile;
+	{	
 	private:
-		bool			_error;
-		unsigned char* _waveData;
-		SF_INFO			_info;
-		bool            _loop;
-		unsigned long   _samplePosition;
-		unsigned long   _waveSize;
-		bool _playing;
-		string _name;
-		string _path;
-		misound::SoundFormat _format;
-		misound::AlsaStream _stream;
+		SNDFILE* _WaveFile;
+		WaveData_t		_WaveData;
+		SF_INFO			_Info;
+		bool            _Loop;
+		unsigned long   _SamplePosition;
+		unsigned long   _WaveSize;
+		bool _Playing;
+		string _Name;
+		string _Path;
+		misound::SoundFormat _Format;
+		misound::AlsaStream _Stream;
 		std::string _SoundCard;
+		bool _Error;
+
+		bool setup();
 
 
 		const std::string _DefaultSoundCard = "plug:dmix0";
@@ -53,7 +47,7 @@ namespace misound
 
 		bool isPlaying()
 		{
-			return _stream.playing();
+			return _Stream.playing();
 		}
 
 		unsigned long  samplePosition() const;
@@ -62,20 +56,20 @@ namespace misound
 
 		int error();
 
-		const std::string& getName() const { return _name; }
-		const std::string& getPath() const { return _path; }
-		bool loop() const { return _loop; }
+		const std::string& getName() const { return _Name; }
+		const std::string& getPath() const { return _Path; }
+		bool loop() const { return _Loop; }
 		void setLoop(bool loop)
 		{
-			_loop = loop;
+			_Loop = loop;
 		}
-		unsigned char* waveData() const { return _waveData; }
+		WaveData_t waveData() const { return _WaveData; }
 		const SF_INFO& info();
 
 		virtual void changeSoundcard(const std::string& device)
 		{
 			_SoundCard = device;
-			_stream.changeSoundcard(_SoundCard);
+			_Stream.changeSoundcard(_SoundCard);
 		}
 
 	};
