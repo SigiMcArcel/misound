@@ -496,29 +496,32 @@ namespace misound
 		bool configVolume()
 		{
 			int result = 0;
-			snd_ctl_t* handle;
 			snd_mixer_selem_id_t* sid = NULL;
 			snd_mixer_elem_t* elem;
 			const char* card = _Hw.c_str();
 			const char* selem_name = "Digital";
-			
-
+		
 			if (_MixerHandle == NULL)
 			{
 				return false;
 			}
 
 			result = snd_mixer_attach(_MixerHandle, card);
+
 			if (result < 0)
 			{
 				return false;
 			}
+
 			result = snd_mixer_selem_register(_MixerHandle, NULL, NULL);
+
 			if (result < 0)
 			{
 				return false;
 			}
+
 			result = snd_mixer_load(_MixerHandle);
+
 			if (result < 0)
 			{
 				return false;
@@ -582,8 +585,8 @@ namespace misound
 			, _VolumeThread()
 			, _VolumeValue(0)
 			, _Intervall(intervall)
-			, _MixerHandle(NULL)
-			, _AlsaElem(NULL)
+			, _MixerHandle(nullptr)
+			, _AlsaElem(nullptr)
 			, _SoundCard(soundCard)
 			, _Hw("")
 			, _Stop(false)
@@ -594,10 +597,22 @@ namespace misound
 			if (!getUnderlyingHardware())
 			{
 				_Error = -1;
+				return;
 			}
 			if (!openVolume(_Intervall))
 			{
 				_Error = -1;
+				return;
+			}
+			if (_MixerHandle == nullptr)
+			{
+				_Error = -1;
+				return;
+			}
+			if (_AlsaElem == nullptr)
+			{
+				_Error = -1;
+				return;
 			}
 			volume_normalized_set(_AlsaElem, 0, 0);
 		}
@@ -637,14 +652,20 @@ namespace misound
 
 		static void* VolumeProc(void* p)
 		{
-
+#if 0
 			int last = 0;
+#endif
 			int current = 0;
+
 			if (p == NULL)
 			{
 				return NULL;
 			}
 			AlsaVolume* volume = (AlsaVolume*)p;
+			if (volume->_AlsaElem == nullptr)
+			{
+				return nullptr;
+			}
 			while (!volume->_Stop)
 			{
 				current = static_cast<int>(volume->_VolumeValue);
@@ -667,7 +688,7 @@ namespace misound
 				usleep(volume->_Intervall * 1000);
 			}
 
-			return NULL;
+			return nullptr;
 		}
 	};
 
