@@ -16,6 +16,7 @@
 #include <vector>
 #include <iostream>
 #include <algorithm>
+#include "AlsaVolume.h"
 
 namespace misound
 {
@@ -42,7 +43,7 @@ namespace misound
 		virtual bool playWave(const int num, bool restart = false) = 0;
 		virtual bool stopWave(const string& name) = 0;
 		virtual bool stopAllWave() = 0;
-		virtual bool setVolume(int volume) = 0;
+		virtual bool setVolume(double volumePercent) = 0;
 		virtual bool changeSoundcard(const std::string soundcard) = 0;
 	};
 
@@ -75,7 +76,7 @@ namespace misound
 		virtual bool playWave(const int num, bool restart = false);
 		virtual bool stopWave(const string& name);
 		virtual bool stopAllWave();
-		virtual bool setVolume(int volume);
+		virtual bool setVolume(double volumePercent);
 		virtual bool changeSoundcard(const std::string soundcard);
 	};
 }

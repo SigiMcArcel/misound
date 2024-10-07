@@ -6,7 +6,7 @@
 #include <string.h>
 #include <stdint.h>
 #include <memory> 
-#include "Alsa.h"
+#include "AlsaStream.h"
 
 using namespace std;
 namespace misound

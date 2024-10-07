@@ -1,7 +1,7 @@
 #include "Audio.h"
 #include <inttypes.h>
 #include <pthread.h>
-#include "Alsa.h"
+#include "AlsaStream.h"
 #include <vector>
 
 static pthread_mutex_t  SHAKE_BufferMutex = PTHREAD_MUTEX_INITIALIZER;
@@ -12,21 +12,21 @@ using namespace std;
 
 misound::Audio::Audio()
 	:_waves()
-	,_volume(5,_DefaultSoundCard)
+	,_volume(_DefaultSoundCard)
 	,_SoundCard(_DefaultSoundCard)
 {
 }
 
 misound::Audio::Audio(const std::string& soundCard)
 	:_waves()
-	, _volume(5, soundCard)
+	, _volume(soundCard)
 	, _SoundCard(soundCard)
 {
 }
 
 misound::Audio::Audio(const std::string& soundCard, const std::string& rootPath)
 	:_waves()
-	, _volume(5, soundCard)
+	, _volume(soundCard)
 	, _SoundCard(soundCard)
 	, _RootPath(rootPath)
 {
@@ -183,9 +183,9 @@ bool misound::Audio::addWavesFromFolder(const string & folder,bool loop)
 	return true;
 }
 
-bool misound::Audio::setVolume(int volume)
+bool misound::Audio::setVolume(double volumePercent)
 {
-	return _volume.setVolume(static_cast<double>(volume));
+	return _volume.setVolume(volumePercent);
 }
 
 bool misound::Audio::changeSoundcard(const std::string soundcard)

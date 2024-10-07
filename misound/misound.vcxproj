@@ -83,12 +83,16 @@
     <TargetExt>.so</TargetExt>
   </PropertyGroup>
   <ItemGroup>
-    <ClCompile Include="Alsa.cpp" />
+    <ClCompile Include="AlsaMidi.cpp" />
+    <ClCompile Include="AlsaStream.cpp" />
+    <ClCompile Include="AlsaVolume.cpp" />
     <ClCompile Include="Audio.cpp" />
     <ClCompile Include="Wave.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Alsa.h" />
+    <ClInclude Include="AlsaMidi.h" />
+    <ClInclude Include="AlsaStream.h" />
+    <ClInclude Include="AlsaVolume.h" />
     <ClInclude Include="Audio.h" />
     <ClInclude Include="miSoundTypes.h" />
     <ClInclude Include="Wave.h" />
