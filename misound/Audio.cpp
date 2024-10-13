@@ -124,7 +124,7 @@ bool misound::Audio::stopAllWave()
 bool misound::Audio::addWave(const Wave& wave)
 {
 	_waves.insert(std::make_pair(wave.getName(),wave));
-	printf( "cAudio::addWave : add Wave %s from %s count %d\n", wave.getName().c_str(), wave.getPath().c_str(),_waves.size());
+	//printf( "cAudio::addWave : add Wave %s from %s count %d\n", wave.getName().c_str(), wave.getPath().c_str(),_waves.size());
 	return true;
 }
  
