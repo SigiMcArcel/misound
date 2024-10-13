@@ -12,21 +12,21 @@ using namespace std;
 
 misound::Audio::Audio()
 	:_waves()
-	,_volume(_DefaultSoundCard)
+	,_volume(_DefaultSoundCard, 0.0)
 	,_SoundCard(_DefaultSoundCard)
 {
 }
 
-misound::Audio::Audio(const std::string& soundCard)
+misound::Audio::Audio(const std::string& soundCard, double volumeOffset)
 	:_waves()
-	, _volume(soundCard)
+	, _volume(soundCard, volumeOffset)
 	, _SoundCard(soundCard)
 {
 }
 
-misound::Audio::Audio(const std::string& soundCard, const std::string& rootPath)
+misound::Audio::Audio(const std::string& soundCard, const std::string& rootPath, double volumeOffset)
 	:_waves()
-	, _volume(soundCard)
+	, _volume(soundCard, volumeOffset)
 	, _SoundCard(soundCard)
 	, _RootPath(rootPath)
 {
