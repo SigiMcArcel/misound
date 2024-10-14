@@ -193,16 +193,7 @@ namespace misound
 		dMin = static_cast<double>(min);
 		// Berechne den skalierter Wert basierend auf min und max
 		double offsetAlsa = dMin + (_VolumeOffset * (dMax - dMin) / 100.0);
-		
-		//double scaledVolume = (dMin + offsetAlsa) + (volAsPercent * (dMax - (dMin + offsetAlsa)) / 100.0);
 		double scaledVolume =log10(1 + 9 * volAsPercent / 100.0)* (dMax - (dMin + offsetAlsa)) + (dMin + offsetAlsa);
-		//double offsetPercent = std::max(0.0, volAsPercent - _VolumeOffset); // Beispiel: Startet bei 34% Potentiometerwert
-		//double scaledVolume = offsetPercent / (100.0 - offsetPercent) * (dMax - dMin) + dMin; // Skaliert von 34% bis 100% auf Lautstärkebereich
-		
-		
-		
-		printf("percent %f scaled %f dmax = %f dmin = %f scaled int %d offsetAlsa %f\n", 
-			volAsPercent, scaledVolume, dMin, dMax, static_cast<long>(scaledVolume), offsetAlsa);
 		if (snd_mixer_selem_set_playback_volume_all(_AlsaElem, static_cast<long>(scaledVolume)) < 0) 
 		{
 			printf("Alsa.h Volume::setVolumeIntern failed\n");
