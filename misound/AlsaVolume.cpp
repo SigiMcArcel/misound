@@ -194,6 +194,10 @@ namespace misound
 		// Berechne den skalierter Wert basierend auf min und max
 		double offsetAlsa = dMin + (_VolumeOffset * (dMax - dMin) / 100.0);
 		double scaledVolume =log10(1 + 9 * volAsPercent / 100.0)* (dMax - (dMin + offsetAlsa)) + (dMin + offsetAlsa);
+		if (volAsPercent < 0.1)
+		{
+			scaledVolume = 0.0;
+		}
 		if (snd_mixer_selem_set_playback_volume_all(_AlsaElem, static_cast<long>(scaledVolume)) < 0) 
 		{
 			printf("Alsa.h Volume::setVolumeIntern failed\n");
