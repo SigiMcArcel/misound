@@ -6,6 +6,13 @@
 namespace misound
 {
 	#define MAX_LINEAR_DB_SCALE 24
+
+	typedef enum class VolumeTranspose_t
+	{
+		linear,
+		log,
+	}VolumeTranspose;
+
 	class AlsaVolume
 	{
 	private:
@@ -17,7 +24,9 @@ namespace misound
 		bool _Stop;
 		int _Error = 0;
 		double _VolumeOffset;
+		VolumeTranspose _Transpose;
 
+		void init();
 		long linearToAlsaVolume(int linearVolume);
 		long linearToAlsaVolumeLog(int linearVolume);
 		bool getUnderlyingHardware();
@@ -27,7 +36,7 @@ namespace misound
 		bool setVolumeIntern(double volAsPercent);
 
 	public:
-		AlsaVolume(const std::string& soundCard,double volumeOffset)
+		AlsaVolume(const std::string& soundCard,double volumeOffset,misound::VolumeTranspose transpose)
 			: _VolumeValue(0)
 			, _MixerHandle(nullptr)
 			, _AlsaElem(nullptr)
@@ -36,31 +45,26 @@ namespace misound
 			, _Stop(false)
 			, _Error(0)
 			, _VolumeOffset(volumeOffset)
-
+			, _Transpose(transpose)
 		{
-			_Error = 0;
-			if (!getUnderlyingHardware())
-			{
-				_Error = -1;
-				return;
-			}
-			if (!openVolume())
-			{
-				_Error = -1;
-				return;
-			}
-			if (_MixerHandle == nullptr)
-			{
-				_Error = -1;
-				return;
-			}
-			if (_AlsaElem == nullptr)
-			{
-				_Error = -1;
-				return;
-			}
-			snd_mixer_selem_set_playback_volume_all(_AlsaElem, 0);
+			init();
 		}
+
+		AlsaVolume(const std::string& soundCard, double volumeOffset)
+			: _VolumeValue(0)
+			, _MixerHandle(nullptr)
+			, _AlsaElem(nullptr)
+			, _SoundCard(soundCard)
+			, _Hw("")
+			, _Stop(false)
+			, _Error(0)
+			, _VolumeOffset(volumeOffset)
+			, _Transpose(VolumeTranspose::log)
+		{
+			init();
+		}
+
+
 
 		~AlsaVolume()
 		{

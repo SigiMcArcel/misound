@@ -33,6 +33,14 @@ misound::Audio::Audio(const std::string& soundCard, const std::string& rootPath,
 	
 }
 
+misound::Audio::Audio(const std::string& soundCard, const std::string& rootPath, double volumeOffset, misound::VolumeTranspose transpose)
+	:_waves()
+	, _volume(soundCard, volumeOffset, transpose)
+	, _SoundCard(soundCard)
+	, _RootPath(rootPath)
+{
+}
+
 misound::Audio::~Audio()
 {
 }

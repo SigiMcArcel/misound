@@ -3,6 +3,31 @@
 
 namespace misound
 {
+	void AlsaVolume::init()
+	{
+		_Error = 0;
+		if (!getUnderlyingHardware())
+		{
+			_Error = -1;
+			return;
+		}
+		if (!openVolume())
+		{
+			_Error = -1;
+			return;
+		}
+		if (_MixerHandle == nullptr)
+		{
+			_Error = -1;
+			return;
+		}
+		if (_AlsaElem == nullptr)
+		{
+			_Error = -1;
+			return;
+		}
+		snd_mixer_selem_set_playback_volume_all(_AlsaElem, 0);
+	}
 
 	long misound::AlsaVolume::linearToAlsaVolume(int linearVolume)
 	{
@@ -187,18 +212,28 @@ namespace misound
 		//long alsaVolume = linearToAlsaVolumeLog(volAsPercent);
 		long min, max;
 		double dMin, dMax;
+		double dScaledVolume = 0.0;
 		snd_mixer_selem_get_playback_volume_range(_AlsaElem, & min, & max);
 
 		dMax = static_cast<double>(max);
 		dMin = static_cast<double>(min);
 		// Berechne den skalierter Wert basierend auf min und max
 		double offsetAlsa = dMin + (_VolumeOffset * (dMax - dMin) / 100.0);
-		double scaledVolume =log10(1 + 9 * volAsPercent / 100.0)* (dMax - (dMin + offsetAlsa)) + (dMin + offsetAlsa);
+		
+		if (_Transpose == misound::VolumeTranspose::log)
+		{
+			dScaledVolume = log10(1 + 9 * volAsPercent / 100.0) * (dMax - (dMin + offsetAlsa)) + (dMin + offsetAlsa);
+		}
+		else
+		{
+			dScaledVolume = dMin + ((volAsPercent / 100) * (dMax - dMin));
+		}
+
 		if (volAsPercent < 0.1)
 		{
-			scaledVolume = 0.0;
+			dScaledVolume = 0.0;
 		}
-		if (snd_mixer_selem_set_playback_volume_all(_AlsaElem, static_cast<long>(scaledVolume)) < 0) 
+		if (snd_mixer_selem_set_playback_volume_all(_AlsaElem, static_cast<long>(dScaledVolume)) < 0)
 		{
 			printf("Alsa.h Volume::setVolumeIntern failed\n");
 			return false;

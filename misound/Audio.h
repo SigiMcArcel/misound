@@ -63,6 +63,7 @@ namespace misound
 		Audio operator=(const Audio& other) = delete;
 		Audio(const std::string& soundCard, double volumeOffset);
 		Audio(const std::string& soundCard, const std::string& rootPath, double volumeOffset);
+		Audio(const std::string& soundCard, const std::string& rootPath, double volumeOffset, misound::VolumeTranspose transpose);
 		~Audio();
 
 
