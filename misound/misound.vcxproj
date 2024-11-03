@@ -94,6 +94,7 @@
     <ClInclude Include="AlsaStream.h" />
     <ClInclude Include="AlsaVolume.h" />
     <ClInclude Include="Audio.h" />
+    <ClInclude Include="miSoundDebug.h" />
     <ClInclude Include="miSoundTypes.h" />
     <ClInclude Include="Wave.h" />
   </ItemGroup>

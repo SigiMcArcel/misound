@@ -33,9 +33,9 @@ misound::Audio::Audio(const std::string& soundCard, const std::string& rootPath,
 	
 }
 
-misound::Audio::Audio(const std::string& soundCard, const std::string& rootPath, double volumeOffset, misound::VolumeTranspose transpose)
+misound::Audio::Audio(const std::string& soundCard, const std::string& rootPath, double volumeMin, double volumeMax, misound::VolumeScaleMode scalemode)
 	:_waves()
-	, _volume(soundCard, volumeOffset, transpose)
+	, _volume(soundCard, volumeMin,volumeMax, scalemode)
 	, _SoundCard(soundCard)
 	, _RootPath(rootPath)
 {

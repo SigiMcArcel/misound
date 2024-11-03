@@ -2,16 +2,19 @@
 #include <alsa/asoundlib.h>
 #include <string>
 #include <math.h>
+#include "miSoundDebug.h"
 
 namespace misound
 {
 	#define MAX_LINEAR_DB_SCALE 24
 
-	typedef enum class VolumeTranspose_t
+	#define VOLDEBUG(y,...) miSoundDebug::miDebug("mivolume",y, __VA_ARGS__)
+
+	typedef enum class VolumeScaleMode_t
 	{
 		linear,
 		log,
-	}VolumeTranspose;
+	}VolumeScaleMode;
 
 	class AlsaVolume
 	{
@@ -23,8 +26,9 @@ namespace misound
 		std::string _Hw;
 		bool _Stop;
 		int _Error = 0;
-		double _VolumeOffset;
-		VolumeTranspose _Transpose;
+		double _VolumeMin;
+		double _VolumeMax;
+		VolumeScaleMode _ScaleMode;
 
 		void init();
 		long linearToAlsaVolume(int linearVolume);
@@ -33,10 +37,10 @@ namespace misound
 		bool configVolume();
 		bool openVolume();
 		bool closeVolume();
-		bool setVolumeIntern(double volAsPercent);
+		bool setVolumeIntern(double volAsPercent, double volumeMax, double volumeMin, misound::VolumeScaleMode scaleMode);
 
 	public:
-		AlsaVolume(const std::string& soundCard,double volumeOffset,misound::VolumeTranspose transpose)
+		AlsaVolume(const std::string& soundCard,double volumeMin,double volumeMax, misound::VolumeScaleMode scaleMode)
 			: _VolumeValue(0)
 			, _MixerHandle(nullptr)
 			, _AlsaElem(nullptr)
@@ -44,13 +48,14 @@ namespace misound
 			, _Hw("")
 			, _Stop(false)
 			, _Error(0)
-			, _VolumeOffset(volumeOffset)
-			, _Transpose(transpose)
+			, _VolumeMin(volumeMin)
+			, _VolumeMax(volumeMax)
+			, _ScaleMode(scaleMode)
 		{
 			init();
 		}
 
-		AlsaVolume(const std::string& soundCard, double volumeOffset)
+		AlsaVolume(const std::string& soundCard, double volumeMin)
 			: _VolumeValue(0)
 			, _MixerHandle(nullptr)
 			, _AlsaElem(nullptr)
@@ -58,13 +63,11 @@ namespace misound
 			, _Hw("")
 			, _Stop(false)
 			, _Error(0)
-			, _VolumeOffset(volumeOffset)
-			, _Transpose(VolumeTranspose::log)
+			, _VolumeMin(volumeMin)
+			, _ScaleMode(VolumeScaleMode::log)
 		{
 			init();
 		}
-
-
 
 		~AlsaVolume()
 		{
@@ -72,6 +75,7 @@ namespace misound
 		}
 
 		bool setSoundcard(const std::string& soundCard);
+		bool setSoundcard(const std::string& soundCard, double volumeMin, double volumeMax, misound::VolumeScaleMode scaleMode);
 		bool setVolume(double volumePercent);
 	};
 }

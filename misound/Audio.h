@@ -18,6 +18,7 @@
 #include <algorithm>
 #include "AlsaVolume.h"
 
+
 namespace misound
 {
 	using namespace std;
@@ -28,6 +29,20 @@ namespace misound
 	{
 	public:
 		virtual const Wave& getWave(const std::string& wave) = 0;
+	};
+
+	struct VolumeScaleSet
+	{
+		double _VolumeMin;
+		double _VolumeMax;
+		misound::VolumeScaleMode _ScaleMode;
+		VolumeScaleSet(double volumeMin, double volumeMax, misound::VolumeScaleMode scalemode)
+			:_VolumeMin(volumeMin)
+			,_VolumeMax(volumeMax)
+			,_ScaleMode(scalemode)
+		{
+
+		}
 	};
 
 	class AudioInterface
@@ -63,7 +78,7 @@ namespace misound
 		Audio operator=(const Audio& other) = delete;
 		Audio(const std::string& soundCard, double volumeOffset);
 		Audio(const std::string& soundCard, const std::string& rootPath, double volumeOffset);
-		Audio(const std::string& soundCard, const std::string& rootPath, double volumeOffset, misound::VolumeTranspose transpose);
+		Audio(const std::string& soundCard, const std::string& rootPath, double volumeMin, double volumeMax, misound::VolumeScaleMode scalemode);
 		~Audio();
 
 

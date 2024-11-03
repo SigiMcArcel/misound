@@ -207,32 +207,47 @@ namespace misound
 		return false;
 	}
 
-	bool AlsaVolume::setVolumeIntern(double volAsPercent)
+	bool AlsaVolume::setVolumeIntern(double volAsPercent, double volumeMax, double volumeMin, misound::VolumeScaleMode scaleMode)
 	{
-		//long alsaVolume = linearToAlsaVolumeLog(volAsPercent);
 		long min, max;
 		double dMin, dMax;
 		double dScaledVolume = 0.0;
+
+		if ((volAsPercent < 0.0) || (volAsPercent > 100.0))
+		{
+			return false;
+		}
+		if ((volumeMax < 0.0) || (volumeMax > 100.0))
+		{
+			return false;
+		}
+		if ((volumeMin < 0.0) || (volumeMin > 100.0))
+		{
+			return false;
+		}
+
 		snd_mixer_selem_get_playback_volume_range(_AlsaElem, & min, & max);
 
 		dMax = static_cast<double>(max);
 		dMin = static_cast<double>(min);
-		// Berechne den skalierter Wert basierend auf min und max
-		double offsetAlsa = dMin + (_VolumeOffset * (dMax - dMin) / 100.0);
-		
-		if (_Transpose == misound::VolumeTranspose::log)
-		{
-			dScaledVolume = log10(1 + 9 * volAsPercent / 100.0) * (dMax - (dMin + offsetAlsa)) + (dMin + offsetAlsa);
-		}
-		else
-		{
-			dScaledVolume = dMin + ((volAsPercent / 100) * (dMax - dMin));
-		}
+		// Berechne den Offset für ALSA basierend auf VolumeMin und VolumeMax
+		double offsetAlsa = dMin + (_VolumeMin * (dMax - dMin) / 100.0);  // _VolumeMin und _VolumeMax als Prozentsatz
+		double alsaMaxScaled = dMin + (_VolumeMax * (dMax - dMin) / 100.0);
 
-		if (volAsPercent < 0.1)
+		// Überprüfe, ob volAsPercent innerhalb des gültigen Bereichs liegt
+		if (volAsPercent < 0.1) volAsPercent = 0.0;
+		if (volAsPercent > 100.0) volAsPercent = 100.0;
+
+		// Berechnung des skalierten ALSA-Werts basierend auf logarithmischer oder linearer Skalierung
+		if (scaleMode == misound::VolumeScaleMode::log)
 		{
-			dScaledVolume = 0.0;
+			dScaledVolume = log10(1 + 9 * volAsPercent / 100.0) * (alsaMaxScaled - offsetAlsa) + offsetAlsa;
 		}
+		else  // lineare Skalierung
+		{
+			dScaledVolume = offsetAlsa + ((volAsPercent / 100.0) * (alsaMaxScaled - offsetAlsa));
+		}
+		VOLDEBUG("setVolumeIntern vol as percent = %f dScaledVolume = %f dMin = %f dMax = %f\n", volAsPercent, dScaledVolume, dMin, dMax);
 		if (snd_mixer_selem_set_playback_volume_all(_AlsaElem, static_cast<long>(dScaledVolume)) < 0)
 		{
 			printf("Alsa.h Volume::setVolumeIntern failed\n");
@@ -252,9 +267,19 @@ namespace misound
 				return false;
 			}
 			openVolume();
+
 		}
 
 		return true;
+	}
+
+	bool AlsaVolume::setSoundcard(const std::string& soundCard, double volumeMin, double volumeMax, misound::VolumeScaleMode scaleMode)
+	{
+		_VolumeMax = volumeMax;
+		_VolumeMin = volumeMin;
+		_ScaleMode = scaleMode;
+		setSoundcard(soundCard);
+		return false;
 	}
 
 	bool misound::AlsaVolume::setVolume(double volumePercent)
@@ -264,7 +289,7 @@ namespace misound
 			printf("setVolume error \n");
 			return false;
 		}
-		setVolumeIntern(volumePercent);
+		setVolumeIntern(volumePercent, _VolumeMax, _VolumeMin, _ScaleMode);
 		return true;
 	}
 }
