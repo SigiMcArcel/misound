@@ -8,6 +8,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdint.h>
+#include <json/json.h>
 #include "Wave.h"
 #include <dirent.h>
 #include <sys/types.h>
@@ -36,10 +37,21 @@ namespace misound
 		double _VolumeMin;
 		double _VolumeMax;
 		misound::VolumeScaleMode _ScaleMode;
-		VolumeScaleSet(double volumeMin, double volumeMax, misound::VolumeScaleMode scalemode)
+		bool _FromFile;
+
+		VolumeScaleSet()
+			:_VolumeMin(0.0)
+			,_VolumeMax(100.0)
+			,_ScaleMode(misound::VolumeScaleMode::linear)
+			,_FromFile(false)
+		{
+
+		}
+		VolumeScaleSet(double volumeMin, double volumeMax, misound::VolumeScaleMode scalemode,bool fromFile)
 			:_VolumeMin(volumeMin)
 			,_VolumeMax(volumeMax)
 			,_ScaleMode(scalemode)
+			,_FromFile(fromFile)
 		{
 
 		}
@@ -64,20 +76,24 @@ namespace misound
 
 	class Audio : public AudioInterface
 	{
-		map<string, misound::Wave> _waves;
-		misound::AlsaVolume _volume;
+		map<string, misound::Wave> _Waves;
+		misound::AlsaVolume _Volume;
 		std::string _SoundCard;
 		std::string _RootPath;
+		std::map<string, misound::VolumeScaleSet> _ScaleSets;
 		const std::string _DefaultSoundCard = "plug:dmix0";
+		const std::string _DefaultConfigPath = "/usr/share/misound/conf.d/misound.json";
+		const std::string _DefaultRootPath = "/usr/share/misound/sounds";
 
 		int getWaves(string dir, vector<string>& waves);
 		std::string& replace(std::string& s, const std::string& from, const std::string& to);
+		void getVolumeSettings(const std::string& path);
 	public:
 		Audio();
 		Audio(const Audio& other) = delete;
 		Audio operator=(const Audio& other) = delete;
-		Audio(const std::string& soundCard, double volumeOffset);
-		Audio(const std::string& soundCard, const std::string& rootPath, double volumeOffset);
+		Audio(const std::string& soundCard);
+		Audio(const std::string& soundCard, const std::string& rootPath);
 		Audio(const std::string& soundCard, const std::string& rootPath, double volumeMin, double volumeMax, misound::VolumeScaleMode scalemode);
 		~Audio();
 

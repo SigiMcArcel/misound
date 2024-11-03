@@ -3,6 +3,9 @@
 #include <pthread.h>
 #include "AlsaStream.h"
 #include <vector>
+#include <fstream>
+#include <iostream>
+
 
 static pthread_mutex_t  SHAKE_BufferMutex = PTHREAD_MUTEX_INITIALIZER;
 void shakeLock() { pthread_mutex_lock(&SHAKE_BufferMutex); }
@@ -11,34 +14,39 @@ void shakeUnlock() { pthread_mutex_unlock(&SHAKE_BufferMutex); }
 using namespace std;
 
 misound::Audio::Audio()
-	:_waves()
-	,_volume(_DefaultSoundCard, 0.0)
+	:_Waves()
+	,_Volume(_DefaultSoundCard)
 	,_SoundCard(_DefaultSoundCard)
 {
 }
 
-misound::Audio::Audio(const std::string& soundCard, double volumeOffset)
-	:_waves()
-	, _volume(soundCard, volumeOffset)
+misound::Audio::Audio(const std::string& soundCard)
+	:_Waves()
+	, _Volume(soundCard)
 	, _SoundCard(soundCard)
+	, _RootPath("/usr/share/misound/sounds")
 {
+	_ScaleSets["default"] = VolumeScaleSet(0.0, 100.0, misound::VolumeScaleMode::linear, false);
+	getVolumeSettings(_DefaultConfigPath);
 }
 
-misound::Audio::Audio(const std::string& soundCard, const std::string& rootPath, double volumeOffset)
-	:_waves()
-	, _volume(soundCard, volumeOffset)
+misound::Audio::Audio(const std::string& soundCard, const std::string& rootPath)
+	:_Waves()
+	, _Volume(soundCard)
 	, _SoundCard(soundCard)
 	, _RootPath(rootPath)
 {
-	
+	_ScaleSets["default"] = VolumeScaleSet(0.0, 100.0, misound::VolumeScaleMode::linear, false);
+	getVolumeSettings(_DefaultConfigPath);
 }
 
-misound::Audio::Audio(const std::string& soundCard, const std::string& rootPath, double volumeMin, double volumeMax, misound::VolumeScaleMode scalemode)
-	:_waves()
-	, _volume(soundCard, volumeMin,volumeMax, scalemode)
+misound::Audio::Audio(const std::string& soundCard, const std::string& rootPath, double volumeMin, double volumeMax, misound::VolumeScaleMode scaleMode)
+	:_Waves()
+	, _Volume(soundCard)
 	, _SoundCard(soundCard)
 	, _RootPath(rootPath)
 {
+	_ScaleSets["default"] = VolumeScaleSet(volumeMin, volumeMax, scaleMode, false);
 }
 
 misound::Audio::~Audio()
@@ -47,14 +55,14 @@ misound::Audio::~Audio()
 
 bool misound::Audio::playWave(const string& name, bool restart )
 {
-	auto it = _waves.find(name);
-	if (it == _waves.end())
+	auto it = _Waves.find(name);
+	if (it == _Waves.end())
 	{
 		return false;
 	}
-	if (!_waves[name].isPlaying() || restart)
+	if (!_Waves[name].isPlaying() || restart)
 	{
-		_waves[name].play();
+		_Waves[name].play();
 	}
 		
 	return true;
@@ -62,15 +70,15 @@ bool misound::Audio::playWave(const string& name, bool restart )
 
 bool misound::Audio::playWave(const string& name, bool restart,bool loop)
 {
-	auto it = _waves.find(name);
-	if (it == _waves.end())
+	auto it = _Waves.find(name);
+	if (it == _Waves.end())
 	{
 		return false;
 	}
-	_waves[name].setLoop(loop);
-	if (!_waves[name].isPlaying() || restart)
+	_Waves[name].setLoop(loop);
+	if (!_Waves[name].isPlaying() || restart)
 	{
-		_waves[name].play();
+		_Waves[name].play();
 	}
 
 	return true;
@@ -80,11 +88,11 @@ bool misound::Audio::playWave(const int num, bool restart )
 {
 	int index = 0;
 	map<string, Wave>::iterator it;
-	if ((_waves.size() == 0) || (_waves.size() <= static_cast<size_t>(num)))
+	if ((_Waves.size() == 0) || (_Waves.size() <= static_cast<size_t>(num)))
 	{
 		return false;
 	}
-	for (it = _waves.begin(); it != _waves.end(); it++)
+	for (it = _Waves.begin(); it != _Waves.end(); it++)
 	{
 		if (index == num)
 		{
@@ -100,29 +108,29 @@ bool misound::Audio::playWave(const int num, bool restart )
 
 bool misound::Audio::isPlaying(const string& name)
 {
-	auto it = _waves.find(name);
-	if (it == _waves.end())
+	auto it = _Waves.find(name);
+	if (it == _Waves.end())
 	{
 		return false;
 	}
-	return _waves[name].isPlaying();
+	return _Waves[name].isPlaying();
 }
 
 bool misound::Audio::stopWave(const string& name)
 {
-	auto it = _waves.find(name);
-	if (it == _waves.end())
+	auto it = _Waves.find(name);
+	if (it == _Waves.end())
 	{
 		return false;
 	}
-	_waves[name].stop();
+	_Waves[name].stop();
 	return true;
 }
 
 bool misound::Audio::stopAllWave()
 {
 	map<string, Wave>::iterator it;
-	for (it = _waves.begin(); it != _waves.end(); it++)
+	for (it = _Waves.begin(); it != _Waves.end(); it++)
 	{	
 		it->second.stop();
 	}
@@ -131,7 +139,7 @@ bool misound::Audio::stopAllWave()
 
 bool misound::Audio::addWave(const Wave& wave)
 {
-	_waves.insert(std::make_pair(wave.getName(),wave));
+	_Waves.insert(std::make_pair(wave.getName(),wave));
 	//printf( "cAudio::addWave : add Wave %s from %s count %d\n", wave.getName().c_str(), wave.getPath().c_str(),_waves.size());
 	return true;
 }
@@ -193,18 +201,26 @@ bool misound::Audio::addWavesFromFolder(const string & folder,bool loop)
 
 bool misound::Audio::setVolume(double volumePercent)
 {
-	return _volume.setVolume(volumePercent);
+	return _Volume.setVolume(volumePercent);
 }
 
 bool misound::Audio::changeSoundcard(const std::string soundcard)
 {
 	map<string, Wave>::iterator it;
-	printf("Audio::changeSoundcard %s\n", soundcard.c_str());
-	for (it = _waves.begin(); it != _waves.end(); it++)
+	
+	for (it = _Waves.begin(); it != _Waves.end(); it++)
 	{
 		it->second.changeSoundcard(soundcard);
 	}
-	_volume.setSoundcard(soundcard);
+	if (_ScaleSets.find(soundcard) != _ScaleSets.end()) 
+	{
+		_Volume.setSoundcard(soundcard,_ScaleSets[soundcard]._VolumeMin, _ScaleSets[soundcard]._VolumeMax, _ScaleSets[soundcard]._ScaleMode);
+	}
+	else 
+	{
+		_Volume.setSoundcard(soundcard, _ScaleSets["default"]._VolumeMin, _ScaleSets["default"]._VolumeMax, _ScaleSets["default"]._ScaleMode);
+	}
+	
 	return true;
 }
 
@@ -236,4 +252,82 @@ std::string& misound::Audio::replace(std::string& s, const std::string& from, co
 		for (size_t pos = 0; (pos = s.find(from, pos)) != std::string::npos; pos += to.size())
 			s.replace(pos, from.size(), to);
 	return s;
+}
+
+void misound::Audio::getVolumeSettings(const std::string& path)
+{
+	std::ifstream file(path);
+	if (!file.is_open()) {
+		return;
+	}
+
+	Json::CharReaderBuilder readerBuilder;
+	Json::Value root;
+	std::string errs;
+
+	// Dateiinhalt in einen Stringstream einlesen
+	std::stringstream buffer;
+	buffer << file.rdbuf();
+	std::string jsonString = buffer.str();
+
+	if (!Json::parseFromStream(readerBuilder, buffer, &root, &errs)) 
+	{
+		std::cerr << "Fehler beim Parsen des JSON: " << errs << std::endl;
+		return;
+	}
+
+	for (const auto& key : root.getMemberNames()) 
+	{
+		if (root[key].isObject())
+		{
+			std::string name;
+			misound::VolumeScaleSet volumeSet;
+			for (const auto& subKey : root[key].getMemberNames()) {
+				if (subKey == "name")
+				{
+					if (root[key][subKey].isString())
+					{
+						name = root[key][subKey].asString();
+						volumeSet._FromFile = true;
+					}
+				}
+				if (subKey == "min")
+				{
+					if (root[key][subKey].isDouble())
+					{
+						volumeSet._VolumeMin = root[key][subKey].asDouble();
+					}
+				}
+				if (subKey == "max")
+				{
+					if (root[key][subKey].isDouble())
+					{
+						volumeSet._VolumeMax = root[key][subKey].asDouble();
+					}
+				}
+				if (subKey == "mode")
+				{
+					if (root[key][subKey].isString())
+					{
+						std::string mode = root[key][subKey].asString();
+						if (mode == "linear")
+						{
+							volumeSet._ScaleMode = misound::VolumeScaleMode::linear;
+						}
+						if (mode == "log")
+						{
+							volumeSet._ScaleMode = misound::VolumeScaleMode::log;
+						}
+					}
+				}
+				
+			}
+			if (name != "")
+			{
+				_ScaleSets[name] = volumeSet;
+			}
+			
+		}
+	}
+
 }

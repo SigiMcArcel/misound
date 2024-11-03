@@ -5,7 +5,7 @@ libdir=$(prefix)/lib
 
 INCLUDES = -I. -I/.
 CXXFLAGS = -fpic -Wall -Wl,--no-undefined
-LD_FLAGS = -shared -lsndfile -lpthread -lasound
+LD_FLAGS = -shared -lsndfile -lpthread -lasound -ljsoncpp
 
 # Automatisch alle .cpp-Dateien im aktuellen Verzeichnis als SOURCES verwenden
 SOURCES := $(wildcard *.cpp)

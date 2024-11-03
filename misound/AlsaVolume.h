@@ -29,6 +29,7 @@ namespace misound
 		double _VolumeMin;
 		double _VolumeMax;
 		VolumeScaleMode _ScaleMode;
+		double _VolumeAsPercent;
 
 		void init();
 		long linearToAlsaVolume(int linearVolume);
@@ -51,11 +52,12 @@ namespace misound
 			, _VolumeMin(volumeMin)
 			, _VolumeMax(volumeMax)
 			, _ScaleMode(scaleMode)
+			, _VolumeAsPercent(0.0)
 		{
 			init();
 		}
 
-		AlsaVolume(const std::string& soundCard, double volumeMin)
+		AlsaVolume(const std::string& soundCard)
 			: _VolumeValue(0)
 			, _MixerHandle(nullptr)
 			, _AlsaElem(nullptr)
@@ -63,8 +65,10 @@ namespace misound
 			, _Hw("")
 			, _Stop(false)
 			, _Error(0)
-			, _VolumeMin(volumeMin)
-			, _ScaleMode(VolumeScaleMode::log)
+			, _VolumeMin(0.0)
+			, _VolumeMax(100.0)
+			, _ScaleMode(VolumeScaleMode::linear)
+			, _VolumeAsPercent(0.0)
 		{
 			init();
 		}

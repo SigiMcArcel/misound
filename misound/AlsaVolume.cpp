@@ -231,8 +231,8 @@ namespace misound
 		dMax = static_cast<double>(max);
 		dMin = static_cast<double>(min);
 		// Berechne den Offset für ALSA basierend auf VolumeMin und VolumeMax
-		double offsetAlsa = dMin + (_VolumeMin * (dMax - dMin) / 100.0);  // _VolumeMin und _VolumeMax als Prozentsatz
-		double alsaMaxScaled = dMin + (_VolumeMax * (dMax - dMin) / 100.0);
+		double offsetAlsa = dMin + (volumeMin * (dMax - dMin) / 100.0);  // _VolumeMin und _VolumeMax als Prozentsatz
+		double alsaMaxScaled = dMin + (volumeMax * (dMax - dMin) / 100.0);
 
 		// Überprüfe, ob volAsPercent innerhalb des gültigen Bereichs liegt
 		if (volAsPercent < 0.1) volAsPercent = 0.0;
@@ -247,7 +247,7 @@ namespace misound
 		{
 			dScaledVolume = offsetAlsa + ((volAsPercent / 100.0) * (alsaMaxScaled - offsetAlsa));
 		}
-		VOLDEBUG("setVolumeIntern vol as percent = %f dScaledVolume = %f dMin = %f dMax = %f\n", volAsPercent, dScaledVolume, dMin, dMax);
+		
 		if (snd_mixer_selem_set_playback_volume_all(_AlsaElem, static_cast<long>(dScaledVolume)) < 0)
 		{
 			printf("Alsa.h Volume::setVolumeIntern failed\n");
@@ -262,13 +262,12 @@ namespace misound
 		if (_MixerHandle != nullptr)
 		{
 			closeVolume();
-			if (!getUnderlyingHardware())
-			{
-				return false;
-			}
-			openVolume();
-
 		}
+		if (!getUnderlyingHardware())
+		{
+			return false;
+		}
+		openVolume();
 
 		return true;
 	}
@@ -279,6 +278,7 @@ namespace misound
 		_VolumeMin = volumeMin;
 		_ScaleMode = scaleMode;
 		setSoundcard(soundCard);
+		setVolumeIntern(_VolumeAsPercent, _VolumeMax, _VolumeMin, _ScaleMode);
 		return false;
 	}
 
@@ -289,7 +289,8 @@ namespace misound
 			printf("setVolume error \n");
 			return false;
 		}
-		setVolumeIntern(volumePercent, _VolumeMax, _VolumeMin, _ScaleMode);
+		_VolumeAsPercent = volumePercent;
+		setVolumeIntern(_VolumeAsPercent, _VolumeMax, _VolumeMin, _ScaleMode);
 		return true;
 	}
 }

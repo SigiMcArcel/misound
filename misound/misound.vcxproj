@@ -110,7 +110,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'">
     <Link>
-      <LibraryDependencies>sndfile;pthread;asound;miutils</LibraryDependencies>
+      <LibraryDependencies>sndfile;pthread;asound;miutils;jsoncpp</LibraryDependencies>
       <SharedLibrarySearchPath>/home/root/projects/misound/bin/ARM64/Debug;%(SharedLibrarySearchPath)</SharedLibrarySearchPath>
     </Link>
     <RemotePostBuildEvent>
