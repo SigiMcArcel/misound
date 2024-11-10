@@ -6,15 +6,18 @@
 
 namespace misound
 {
-	#define MAX_LINEAR_DB_SCALE 24
-
-	#define VOLDEBUG(y,...) miSoundDebug::miDebug("mivolume",y, __VA_ARGS__)
-
 	typedef enum class VolumeScaleMode_t
 	{
-		linear,
-		log,
+		none,
+		percentLogToLinearAlsa,
+		percentToAlsa
 	}VolumeScaleMode;
+
+	struct VolumeRange
+	{
+		double Max;
+		double Min;
+	};
 
 	class AlsaVolume
 	{
@@ -30,15 +33,21 @@ namespace misound
 		double _VolumeMax;
 		VolumeScaleMode _ScaleMode;
 		double _VolumeAsPercent;
+		double _ScaledVolume;
+		double _VolumeCardMax;
+		double _VolumeCardMin;
 
 		void init();
-		long linearToAlsaVolume(int linearVolume);
-		long linearToAlsaVolumeLog(int linearVolume);
 		bool getUnderlyingHardware();
 		bool configVolume();
 		bool openVolume();
 		bool closeVolume();
-		bool setVolumeIntern(double volAsPercent, double volumeMax, double volumeMin, misound::VolumeScaleMode scaleMode);
+		bool setVolumeIntern(double volume, double volumeMax, double volumeMin, misound::VolumeScaleMode scaleMode);
+		void getCardInfo();
+		double transformLogToLinear(double volume, double volumeMax,double volumeMin);
+		double scale(double volume, double volumeMax, double volumeMin, misound::VolumeScaleMode scaleMode);
+		
+		
 
 	public:
 		AlsaVolume(const std::string& soundCard,double volumeMin,double volumeMax, misound::VolumeScaleMode scaleMode)
@@ -53,6 +62,9 @@ namespace misound
 			, _VolumeMax(volumeMax)
 			, _ScaleMode(scaleMode)
 			, _VolumeAsPercent(0.0)
+			, _ScaledVolume(0.0)
+			, _VolumeCardMax(0.0)
+			, _VolumeCardMin(0.0)
 		{
 			init();
 		}
@@ -67,8 +79,11 @@ namespace misound
 			, _Error(0)
 			, _VolumeMin(0.0)
 			, _VolumeMax(100.0)
-			, _ScaleMode(VolumeScaleMode::linear)
+			, _ScaleMode(VolumeScaleMode::none)
 			, _VolumeAsPercent(0.0)
+			, _ScaledVolume(0.0)
+			, _VolumeCardMax(0.0)
+			, _VolumeCardMin(0.0)
 		{
 			init();
 		}
@@ -81,6 +96,13 @@ namespace misound
 		bool setSoundcard(const std::string& soundCard);
 		bool setSoundcard(const std::string& soundCard, double volumeMin, double volumeMax, misound::VolumeScaleMode scaleMode);
 		bool setVolume(double volumePercent);
+		bool setVolume(double volume, double volumeMax, double volumeMin, misound::VolumeScaleMode scaleMode);
+		double scaledVolume()
+		{
+			return _ScaledVolume;
+		}
+		VolumeRange getVolumeRange();
+
 	};
 }
 

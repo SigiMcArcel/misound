@@ -29,50 +29,6 @@ namespace misound
 		snd_mixer_selem_set_playback_volume_all(_AlsaElem, 0);
 	}
 
-	long misound::AlsaVolume::linearToAlsaVolume(int linearVolume)
-	{
-		if (linearVolume < 0) linearVolume = 0;
-		if (linearVolume > 100) linearVolume = 100;
-
-		// Logarithmische Skalierung: 0-100% -> -60 dB bis 0 dB
-		// Hier kannst du die minimale dB anpassen, je nach Hardware
-		double minDb = -60.0;
-		double maxDb = 0.0;
-
-		// Berechne den dB-Wert basierend auf der linearen Eingabe
-		double db = minDb + (linearVolume / 100.0) * (maxDb - minDb);
-
-		// Konvertiere dB in eine für ALSA geeignete Lautstärke (0 - 100%)
-		// Dies hängt vom Mixer-Element ab, hier als Beispiel 0-100
-		// In der Praxis musst du die maximale Lautstärke des Mixers abrufen
-		// und entsprechend skalieren.
-		return static_cast<long>((db / 100.0) * 100); // Einfaches Beispiel
-	}
-
-	// Funktion zur Berechnung des logaritmischen Lautstärkewerts
-	long misound::AlsaVolume::linearToAlsaVolumeLog(int linearVolume)
-	{
-		if (linearVolume <= 0)
-			return 0;
-
-		// Logarithmische Skalierung: 0-100% -> 0 - maxVolume
-		// Verwende eine exponentielle Funktion für die Skalierung
-		// Beispiel: y = a * (exp(b * x) - 1)
-		// Dabei ist y der skalierte Wert und x die lineare Eingabe (0-100)
-
-		// Parameter für die Skalierung (kann angepasst werden)
-		double a = 1.0;
-		double b = 0.035; // Anpassbar je nach gewünschter Krümmung
-
-		double scaled = a * (exp(b * linearVolume) - 1);
-
-		// Normiere den Wert auf 0 - 100
-		double normalized = (scaled / (exp(b * 100) - 1)) * 100.0;
-
-		// Runde auf den nächsten ganzen Wert
-		return static_cast<long>(normalized + 0.5);
-	}
-
 	bool misound::AlsaVolume::getUnderlyingHardware() {
 
 		int err;
@@ -207,54 +163,101 @@ namespace misound
 		return false;
 	}
 
-	bool AlsaVolume::setVolumeIntern(double volAsPercent, double volumeMax, double volumeMin, misound::VolumeScaleMode scaleMode)
+	/*
+	* This function converts a exp curve (from a log pot thru adc -> going to inverse log) to a mostly linear curve 
+	* Is needed for alsa, which accept linear values
+	*/
+	double AlsaVolume::transformLogToLinear(double volume, double volumeMax,double volumeMin)
 	{
-		long min, max;
-		double dMin, dMax;
-		double dScaledVolume = 0.0;
-
-		if ((volAsPercent < 0.0) || (volAsPercent > 100.0))
+		double min = volumeMin;
+		if (min == 0)
 		{
-			return false;
-		}
-		if ((volumeMax < 0.0) || (volumeMax > 100.0))
-		{
-			return false;
-		}
-		if ((volumeMin < 0.0) || (volumeMin > 100.0))
-		{
-			return false;
+			min = 1;
 		}
 
-		snd_mixer_selem_get_playback_volume_range(_AlsaElem, & min, & max);
-
-		dMax = static_cast<double>(max);
-		dMin = static_cast<double>(min);
-		// Berechne den Offset für ALSA basierend auf VolumeMin und VolumeMax
-		double offsetAlsa = dMin + (volumeMin * (dMax - dMin) / 100.0);  // _VolumeMin und _VolumeMax als Prozentsatz
-		double alsaMaxScaled = dMin + (volumeMax * (dMax - dMin) / 100.0);
-
-		// Überprüfe, ob volAsPercent innerhalb des gültigen Bereichs liegt
-		if (volAsPercent < 0.1) volAsPercent = 0.0;
-		if (volAsPercent > 100.0) volAsPercent = 100.0;
-
-		// Berechnung des skalierten ALSA-Werts basierend auf logarithmischer oder linearer Skalierung
-		if (scaleMode == misound::VolumeScaleMode::log)
+		double tmp = std::log(volume) / std::log(volumeMax) * volumeMax;
+		if (tmp < volumeMin)
 		{
-			dScaledVolume = log10(1 + 9 * volAsPercent / 100.0) * (alsaMaxScaled - offsetAlsa) + offsetAlsa;
+			tmp = volumeMin;
 		}
-		else  // lineare Skalierung
+		if (tmp > volumeMax)
 		{
-			dScaledVolume = offsetAlsa + ((volAsPercent / 100.0) * (alsaMaxScaled - offsetAlsa));
+			tmp = volumeMax;
+		}
+		return tmp;
+	}
+
+	double AlsaVolume::scale(double volume, double volumeMax, double volumeMin, misound::VolumeScaleMode scaleMode)
+	{
+		double result =  0.0;
+		double alsaMinScaled = _VolumeCardMin + (volumeMin * (_VolumeCardMax - _VolumeCardMin) / 100.0);
+		double alsaMaxScaled = _VolumeCardMin + (volumeMax * (_VolumeCardMax - _VolumeCardMin) / 100.0);
+
+		switch (scaleMode)
+		{
+		case misound::VolumeScaleMode::percentToAlsa:
+		{
+			result = alsaMinScaled + ((volume / 100.0) * (alsaMaxScaled - alsaMinScaled));
+			break;
+		}
+		case misound::VolumeScaleMode::percentLogToLinearAlsa:
+		{
+			result = transformLogToLinear(volume, volumeMax,volumeMin);
+			result = alsaMinScaled + ((result / 100.0) * (alsaMaxScaled - alsaMinScaled));
+			break;
+		}
+		case misound::VolumeScaleMode::none:
+		{
+			result = volume;
+			break;
+		}
+
+		default:
+			break;
+		}
+
+		if ((result < _VolumeCardMin) || (result > _VolumeCardMax))
+		{
+			fprintf(stderr,"AlsaVolume : volume is out of range\n");
+		}
+		if (result < _VolumeCardMin)
+		{
+			result = _VolumeCardMin;
+		}
+		if (result > _VolumeCardMax)
+		{
+			result = _VolumeCardMax;
 		}
 		
-		if (snd_mixer_selem_set_playback_volume_all(_AlsaElem, static_cast<long>(dScaledVolume)) < 0)
+		return result;
+	}
+
+	bool AlsaVolume::setVolumeIntern(double volume, double volumeMax, double volumeMin, misound::VolumeScaleMode scaleMode)
+	{
+		if (_VolumeCardMax == 0)
+		{
+			fprintf(stderr, "AlsaVolume : Error. card maximum is null, card max = %f\n", _VolumeCardMax);
+			return false;
+		}
+		
+		_ScaledVolume = scale(volume, volumeMax, volumeMin, scaleMode);
+
+		if (snd_mixer_selem_set_playback_volume_all(_AlsaElem, static_cast<long>(_ScaledVolume)) < 0)
 		{
 			printf("Alsa.h Volume::setVolumeIntern failed\n");
 			return false;
 		}
 		return true;
 	}
+
+	void AlsaVolume::getCardInfo()
+	{
+		long min, max;
+		snd_mixer_selem_get_playback_volume_range(_AlsaElem, &min, &max);
+		_VolumeCardMax = static_cast<double>(max);
+		_VolumeCardMin = static_cast<double>(min);
+	}
+
 
 	bool misound::AlsaVolume::setSoundcard(const std::string& soundCard)
 	{
@@ -268,7 +271,7 @@ namespace misound
 			return false;
 		}
 		openVolume();
-
+		getCardInfo();
 		return true;
 	}
 
@@ -293,4 +296,19 @@ namespace misound
 		setVolumeIntern(_VolumeAsPercent, _VolumeMax, _VolumeMin, _ScaleMode);
 		return true;
 	}
+
+	bool AlsaVolume::setVolume(double volume, double volumeMax, double volumeMin, misound::VolumeScaleMode scaleMode)
+	{
+		return setVolumeIntern(volume, volumeMax, volumeMin, scaleMode);
+	}
+
+	VolumeRange AlsaVolume::getVolumeRange()
+	{
+		VolumeRange range;
+		range.Max = _VolumeCardMax;
+		range.Max = _VolumeCardMin;
+
+		return range;
+	}
+	
 }

@@ -42,7 +42,7 @@ namespace misound
 		VolumeScaleSet()
 			:_VolumeMin(0.0)
 			,_VolumeMax(100.0)
-			,_ScaleMode(misound::VolumeScaleMode::linear)
+			,_ScaleMode(misound::VolumeScaleMode::percentToAlsa)
 			,_FromFile(false)
 		{
 
@@ -97,7 +97,11 @@ namespace misound
 		Audio(const std::string& soundCard, const std::string& rootPath, double volumeMin, double volumeMax, misound::VolumeScaleMode scalemode);
 		~Audio();
 
-
+		misound::AlsaVolume& getVolumeControl()
+		{
+			return _Volume;
+		}
+		
 		virtual bool addWave(const Wave& wave);
 		virtual bool addWave(const string& name, bool loop);
 		virtual bool addWave(const string& path, const string& name, bool loop);

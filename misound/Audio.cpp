@@ -26,8 +26,9 @@ misound::Audio::Audio(const std::string& soundCard)
 	, _SoundCard(soundCard)
 	, _RootPath("/usr/share/misound/sounds")
 {
-	_ScaleSets["default"] = VolumeScaleSet(0.0, 100.0, misound::VolumeScaleMode::linear, false);
+	_ScaleSets["default"] = VolumeScaleSet(0.0, 100.0, misound::VolumeScaleMode::percentToAlsa, false);
 	getVolumeSettings(_DefaultConfigPath);
+	changeSoundcard(_SoundCard);
 }
 
 misound::Audio::Audio(const std::string& soundCard, const std::string& rootPath)
@@ -36,8 +37,9 @@ misound::Audio::Audio(const std::string& soundCard, const std::string& rootPath)
 	, _SoundCard(soundCard)
 	, _RootPath(rootPath)
 {
-	_ScaleSets["default"] = VolumeScaleSet(0.0, 100.0, misound::VolumeScaleMode::linear, false);
+	_ScaleSets["default"] = VolumeScaleSet(0.0, 100.0, misound::VolumeScaleMode::percentToAlsa, false);
 	getVolumeSettings(_DefaultConfigPath);
+	changeSoundcard(_SoundCard);
 }
 
 misound::Audio::Audio(const std::string& soundCard, const std::string& rootPath, double volumeMin, double volumeMax, misound::VolumeScaleMode scaleMode)
@@ -47,6 +49,7 @@ misound::Audio::Audio(const std::string& soundCard, const std::string& rootPath,
 	, _RootPath(rootPath)
 {
 	_ScaleSets["default"] = VolumeScaleSet(volumeMin, volumeMax, scaleMode, false);
+	changeSoundcard(_SoundCard);
 }
 
 misound::Audio::~Audio()
@@ -312,11 +315,11 @@ void misound::Audio::getVolumeSettings(const std::string& path)
 						std::string mode = root[key][subKey].asString();
 						if (mode == "linear")
 						{
-							volumeSet._ScaleMode = misound::VolumeScaleMode::linear;
+							volumeSet._ScaleMode = misound::VolumeScaleMode::percentToAlsa;
 						}
 						if (mode == "log")
 						{
-							volumeSet._ScaleMode = misound::VolumeScaleMode::log;
+							volumeSet._ScaleMode = misound::VolumeScaleMode::percentLogToLinearAlsa;
 						}
 					}
 				}

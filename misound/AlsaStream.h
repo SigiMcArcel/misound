@@ -91,7 +91,7 @@ namespace misound
 				printf("Alsa.h Alsa : Could not create stream");
 				_Valid = false;
 			}
-			//printf("Alsatream Card %sconstructor channels %d rate = %d\n", _Soundcard.c_str(), _Channels, _Rate);
+			
 		}
 
 		virtual ~AlsaStream()
